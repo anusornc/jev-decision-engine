@@ -10,6 +10,8 @@
 
 Supports both global [TypeSafe Jev AI](https://www.jevai.org) (`typesafe/jev-1.13`) and Thai localized open-weights [OpenThai-SystemOne](https://huggingface.co/iapp/OpenThai-SystemOne) by iApp.
 
+> 📖 **[อ่านคู่มือการใช้งานฉบับเต็มภาษาไทย (Comprehensive User Guide)](./docs/guide.md)** | **[Decision Primitives Reference](./.agents/skills/jev-decision-engine/references/primitives.md)**
+
 ---
 
 ## 🎯 Highlights
