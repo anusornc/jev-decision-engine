@@ -1,0 +1,43 @@
+name: Unit Tests & Verification
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        node-version: ["18.x", "20.x"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Run Python DSL Experiment Suite
+        run: |
+          python3 tests/test_dsl.py
+
+      - name: Run Node.js DSL Experiment Suite
+        run: |
+          node tests/test_dsl.js
+
+      - name: Verify CLI Presets
+        run: |
+          python3 scripts/evaluate.py --preset tool_guard --state "rm -rf /"
+          python3 scripts/evaluate.py --preset model_router --state "Implement lock-free queue in C++"
+          python3 scripts/evaluate.py --preset completion_review --state "All tests pass"

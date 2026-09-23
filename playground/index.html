@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jev Model Interactive Decision Sandbox - System 1 AI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Sarabun', 'Outfit', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        darkbg: '#0b0f19',
+                        panelbg: '#111827',
+                        bordercolor: '#1f293d',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            font-family: 'Sarabun', sans-serif;
+        }
+        .glow-btn {
+            box-shadow: 0 0 20px -3px rgba(244, 63, 94, 0.4);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 20px -3px rgba(6, 182, 212, 0.35);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#0b0f19]">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <a href="../index.html" class="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition" title="กลับสู่สารบัญหลัก">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </a>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded font-mono">System 1 AI</span>
+                        <h1 class="text-base md:text-lg font-bold text-white tracking-tight">Jev Model Interactive Decision Sandbox</h1>
+                        <span id="header-model-badge" class="hidden sm:inline-block text-[10px] font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">typesafe/jev-1.13</span>
+                    </div>
+                    <p class="text-xs text-slate-400 font-light">ทดลองการตัดสินใจแบบมีโครงสร้าง (Choice, Score, Noul) ด้วยความหน่วงระดับ ~100ms</p>
+                </div>
+            </div>
+
+            <!-- Top Actions -->
+            <div class="flex items-center space-x-2">
+                <button onclick="openApiKeyModal()" id="api-key-status-btn" class="text-xs font-semibold px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg transition flex items-center space-x-1.5">
+                    <span id="key-indicator" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span id="key-label">ตั้งค่า API Key</span>
+                </button>
+                <a href="https://www.jevai.org/th/docs" target="_blank" rel="noopener" class="text-xs font-semibold px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition flex items-center space-x-1">
+                    <span>📖 เอกสาร Jev</span>
+                    <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="container mx-auto px-4 py-6 flex-1 flex flex-col lg:flex-row gap-6 max-w-7xl">
+
+        <!-- Left Column: Input Builder -->
+        <div class="lg:w-1/2 flex flex-col space-y-5">
+            
+            <!-- Preset & State Panel -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <!-- Model Architecture Selector -->
+                <div class="pb-3 mb-3 border-b border-slate-800 space-y-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <label for="model-select" class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center space-x-1.5">
+                            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                            <span>สถาปัตยกรรมโมเดล (Model):</span>
+                        </label>
+                        <select id="model-select" onchange="onModelSelectChange(this.value)" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 outline-none focus:border-indigo-500 transition font-mono">
+                            <option value="typesafe/jev-1.13">typesafe/jev-1.13 (Global / Code & DevOps)</option>
+                            <option value="iapp/OpenThai-SystemOne">iapp/OpenThai-SystemOne (Thai Native / สคบ. / Slang)</option>
+                        </select>
+                    </div>
+                    <div id="model-hint" class="text-[11px] px-2.5 py-1.5 rounded-lg bg-slate-950/60 border border-slate-800/80 text-slate-400 flex items-center justify-between">
+                        <span>⚡ <strong>TypeSafe Jev Cloud:</strong> รองรับการยิง Live API ผ่านคีย์ของ jevai.org</span>
+                        <span class="text-[10px] text-slate-500 font-mono">Cloud API</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-3">
+                    <label class="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        <span>1. โหลดตัวอย่างการใช้งาน (Preset)</span>
+                    </label>
+                    <select id="preset-select" onchange="loadPreset(this.value)" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 outline-none focus:border-rose-500 transition">
+                        <option value="support">💬 คัดกรองและแบ่งระดับตั๋วลูกค้า (Support Triage)</option>
+                        <option value="thai_complaint">🇹🇭 คัดกรองข้อร้องเรียนภาษาไทย & สคบ. (OpenThai-SystemOne)</option>
+                        <option value="guard">🛡️ ตรวจสอบความปลอดภัย Tool-Calling (Agent Guardrail)</option>
+                        <option value="router">🤖 เลือกรุ่นโมเดล ML ที่เหมาะสม (ML Model Router)</option>
+                        <option value="moderation">🚨 ตรวจจับสินค้า/เนื้อหาผิดกฎหมาย (E-Commerce Moderation)</option>
+                        <option value="devops">⚡ ประเมินเหตุการณ์ระบบล่ม & ปลุก On-call (SRE Incident)</option>
+                        <option value="fraud">💳 ตรวจสอบทุจริตบัตรเครดิต & ธุรกรรม (Anti-Fraud Guard)</option>
+                        <option value="pruning">✂️ บีบอัด Context ประวัติ Tool-calls (Context Pruning)</option>
+                        <option value="custom">✏️ กำหนดเอง (Custom State & Questions)</option>
+                    </select>
+                </div>
+
+                <!-- State Context -->
+                <div class="mt-4">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label for="state-input" class="text-xs font-semibold text-slate-300">บริบทร่วม (State Context):</label>
+                        <span class="text-[10px] text-slate-500 font-mono">ข้อความ / JSON ร่วมทุกคำถาม</span>
+                    </div>
+                    <textarea id="state-input" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none transition resize-y" placeholder="ระบุข้อความหรือ JSON ของ State เช่น ข้อความจากลูกค้า หรือประวัติคำสั่ง..."></textarea>
+                </div>
+            </div>
+
+            <!-- Typed Questions Panel -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex-1 flex flex-col">
+                <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center space-x-1.5">
+                            <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
+                            <span>2. คำถามแบบมีโครงสร้าง (Typed Questions)</span>
+                        </label>
+                        <p class="text-[11px] text-slate-400 font-light mt-0.5">Choice (ตัวเลือก), Score (คะแนนถ่วงน้ำหนัก), Noul (ความน่าจะเป็นใช่)</p>
+                    </div>
+                    <button onclick="openQuestionModal()" class="text-xs font-semibold px-3 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-lg transition flex items-center space-x-1 shadow-sm">
+                        <span>+ เพิ่มคำถาม</span>
+                    </button>
+                </div>
+
+                <!-- Questions Container -->
+                <div id="questions-container" class="space-y-4 overflow-y-auto max-h-[480px] pr-1">
+                    <!-- Dynamic Question Cards injected by JS -->
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-2 flex flex-col sm:flex-row items-stretch gap-2">
+                <button onclick="runDecision(false)" id="run-btn" class="flex-1 py-3 px-6 bg-gradient-to-r from-rose-600 via-rose-500 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 text-white font-bold rounded-xl text-sm transition shadow-lg glow-btn flex items-center justify-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <span>ส่งคำขอประเมินผล (Run Decision)</span>
+                </button>
+                <button onclick="runDecision(true)" id="mock-btn" title="ทดสอบผลลัพธ์ทันทีโดยไม่ยิง API จริง (จำลอง 100% ไม่ติด Browser CORS)" class="py-3 px-4 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold rounded-xl text-xs transition border border-slate-700 flex items-center justify-center space-x-1.5 whitespace-nowrap shadow">
+                    <span>🧪 ทดลองโหมด Mock</span>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Results & Inspector -->
+        <div class="lg:w-1/2 flex flex-col space-y-5">
+            
+            <!-- Execution Status Banner -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div id="status-icon" class="w-9 h-9 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-sm">
+                        💤
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span id="status-text" class="text-xs font-bold text-slate-300">พร้อมรับคำขอ</span>
+                            <span id="mode-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">โหมดจำลอง (Mock Demo)</span>
+                        </div>
+                        <p id="latency-text" class="text-[11px] text-slate-500 font-mono mt-0.5">Latency: -- ms</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 text-xs font-mono">
+                    <span class="text-slate-500 text-[11px]">Model:</span>
+                    <span id="active-model-badge" class="text-rose-400 font-semibold bg-rose-950/50 px-2 py-0.5 rounded border border-rose-900/40">typesafe/jev-1.13</span>
+                </div>
+            </div>
+
+            <!-- Decision Results Cards -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex-1 flex flex-col">
+                <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
+                    <label class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>3. ผลลัพธ์การตัดสินใจ (Decisions & Probabilities)</span>
+                    </label>
+                    <span class="text-[10px] text-slate-500 font-mono">Type-Safe 100% Guaranteed</span>
+                </div>
+
+                <!-- Results Container -->
+                <div id="results-container" class="space-y-4 flex-1 overflow-y-auto max-h-[380px] pr-1">
+                    <div class="h-full min-h-[220px] flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-800 rounded-xl text-slate-500">
+                        <svg class="w-10 h-10 text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <p class="text-xs font-medium text-slate-400">ยังไม่มีผลลัพธ์</p>
+                        <p class="text-[11px] text-slate-600 mt-1 max-w-xs">กดปุ่ม «ส่งคำขอประเมินผล» เพื่อรัน State และ Questions ผ่านโมเดล Jev</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Developer Inspector Tabs -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+                    <div class="flex space-x-2">
+                        <button onclick="switchTab('response')" id="tab-response-btn" class="px-2.5 py-1 rounded text-xs font-semibold bg-slate-800 text-rose-400 border border-slate-700">
+                            Raw JSON
+                        </button>
+                        <button onclick="switchTab('curl')" id="tab-curl-btn" class="px-2.5 py-1 rounded text-xs font-semibold text-slate-400 hover:text-white transition">
+                            cURL / Python
+                        </button>
+                        <button onclick="switchTab('dsl')" id="tab-dsl-btn" class="px-2.5 py-1 rounded text-xs font-semibold text-slate-400 hover:text-white transition">
+                            System 1 DSL (decide)
+                        </button>
+                        <button onclick="switchTab('architecture')" id="tab-arch-btn" class="px-2.5 py-1 rounded text-xs font-semibold text-slate-400 hover:text-white transition">
+                            ทำไมต้อง System 1?
+                        </button>
+                    </div>
+                    <button onclick="copyCode()" class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-800 border border-slate-700 transition">
+                        คัดลอก
+                    </button>
+                </div>
+
+                <div id="inspector-content" class="text-xs font-mono text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800 overflow-x-auto max-h-48">
+                    // ผลลัพธ์ดิบจะแสดงที่นี่หลังส่งคำขอ
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- API Key Modal -->
+    <div id="api-key-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-fade-in my-6">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                    <h3 class="text-base font-bold text-white">ตั้งค่า API Keys (Live Decision Models)</h3>
+                </div>
+                <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-white transition text-lg leading-none">✕</button>
+            </div>
+
+            <p class="text-xs text-slate-400 leading-relaxed mb-4">
+                กรอก API Key สำหรับโมเดลที่คุณต้องการทดสอบกับเซิร์ฟเวอร์จริง (Live API) ระบบจะสลับใช้คีย์และ Endpoint ตามโมเดลที่เลือกโดยอัตโนมัติ:
+            </p>
+
+            <div class="space-y-4">
+                <!-- 1. TypeSafe Jev Key -->
+                <div class="p-3.5 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold text-rose-300 flex items-center space-x-1.5">
+                            <span>⚡ TypeSafe Jev API Key:</span>
+                        </label>
+                        <span class="text-[10px] font-mono text-rose-400 bg-rose-950/50 px-2 py-0.5 rounded border border-rose-900/50">typesafe/jev-1.13</span>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="jev-api-key-input" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-xs font-mono text-white focus:border-rose-500 outline-none pr-10" placeholder="jev_xxxxxxxxxxxxxxxxxxxxxxxx">
+                        <button type="button" onclick="toggleKeyVisibility('jev-api-key-input')" class="absolute right-2.5 top-2 text-slate-500 hover:text-slate-300 text-xs">👁️</button>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-slate-500">
+                        <span>รับคีย์ได้ที่: <a href="https://www.jevai.org" target="_blank" rel="noopener" class="text-rose-400 underline">jevai.org</a></span>
+                        <span id="jev-key-status" class="text-[10px] text-slate-500 font-mono">ยังไม่ได้ใส่คีย์</span>
+                    </div>
+                </div>
+
+                <!-- 2. iApp Technology Key -->
+                <div class="p-3.5 bg-slate-950/80 rounded-xl border border-indigo-900/40 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold text-indigo-300 flex items-center space-x-1.5">
+                            <span>🇹🇭 iApp Technology API Key:</span>
+                        </label>
+                        <span class="text-[10px] font-mono text-indigo-300 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/60">iapp/OpenThai-SystemOne</span>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="iapp-api-key-input" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-xs font-mono text-white focus:border-indigo-500 outline-none pr-10" placeholder="iapp_... หรือคีย์จาก iApp Console">
+                        <button type="button" onclick="toggleKeyVisibility('iapp-api-key-input')" class="absolute right-2.5 top-2 text-slate-500 hover:text-slate-300 text-xs">👁️</button>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-slate-500">
+                        <span>รับคีย์ได้ที่: <a href="https://iapp.co.th" target="_blank" rel="noopener" class="text-indigo-400 underline">iapp.co.th</a></span>
+                        <span id="iapp-key-status" class="text-[10px] text-slate-500 font-mono">ยังไม่ได้ใส่คีย์</span>
+                    </div>
+                </div>
+
+                <!-- 3. Custom Endpoint Override -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-xs font-semibold text-slate-300">Custom API Endpoint Override (ไม่บังคับ):</label>
+                        <span class="text-[10px] text-slate-500 font-mono">Auto-detect</span>
+                    </div>
+                    <input type="text" id="api-endpoint-input" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-rose-500 outline-none" placeholder="เว้นว่างไว้เพื่อ Route อัตโนมัติ (แนะนำ)">
+                    
+                    <!-- Quick endpoint chips -->
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        <button type="button" onclick="document.getElementById('api-endpoint-input').value = 'https://api.iapp.co.th/v3/store/openthai/systemone'" class="text-[10px] px-2 py-0.5 rounded bg-indigo-950/60 text-indigo-300 border border-indigo-800/60 hover:bg-indigo-900/80 transition">
+                            🇹🇭 iApp Live API
+                        </button>
+                        <button type="button" onclick="document.getElementById('api-endpoint-input').value = 'https://www.jevai.org/api/v1/decisions'" class="text-[10px] px-2 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-800/60 hover:bg-rose-900/80 transition">
+                            ⚡ Jev Live API
+                        </button>
+                        <button type="button" onclick="document.getElementById('api-endpoint-input').value = '/api/v1/decisions'" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+                            💻 Local Proxy (:8000)
+                        </button>
+                        <button type="button" onclick="document.getElementById('api-endpoint-input').value = ''" class="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800 transition">
+                            ✕ ล้าง (Auto)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 pt-1">
+                    <input type="checkbox" id="save-key-checkbox" class="rounded bg-slate-800 border-slate-700 text-rose-500 focus:ring-0">
+                    <label for="save-key-checkbox" class="text-xs text-slate-400 select-none">จำคีย์ไว้ในเบราว์เซอร์นี้ (localStorage)</label>
+                </div>
+
+                <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                    <div class="font-semibold text-slate-300">🔒 นโยบายความปลอดภัย:</div>
+                    <p>คีย์ทั้งสองจะถูกจัดเก็บในหน่วยความจำเบราว์เซอร์ของคุณเท่านั้น และจะถูกส่งไปยัง Endpoint ของโมเดลนั้นๆ เท่านั้น</p>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 mt-6">
+                <button onclick="clearApiKey()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition">
+                    ล้างคีย์ทั้งหมด
+                </button>
+                <button onclick="saveApiKey()" class="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white transition shadow-md">
+                    บันทึกและใช้งาน
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Builder Modal -->
+    <div id="question-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl animate-fade-in my-6">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <span id="modal-type-indicator" class="w-3 h-3 rounded-full bg-rose-500"></span>
+                    <h3 id="question-modal-title" class="text-base font-bold text-white">เพิ่มคำถามใหม่ (Add Decision Question)</h3>
+                </div>
+                <button type="button" onclick="closeQuestionModal()" class="text-slate-400 hover:text-white transition text-lg leading-none">✕</button>
+            </div>
+
+            <!-- Quick Template Chips -->
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[11px] font-semibold text-slate-400">⚡ เทมเพลตคำถามด่วน (Quick Presets):</span>
+                    <span class="text-[10px] text-slate-500 font-mono">คลิกเพื่อใส่ข้อมูลอัตโนมัติ</span>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                    <button type="button" onclick="applyQuestionTemplate('sentiment')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+                        <span>😊 Sentiment</span>
+                        <span class="text-[9px] px-1 bg-rose-950 text-rose-400 font-mono rounded">Choice</span>
+                    </button>
+                    <button type="button" onclick="applyQuestionTemplate('urgency')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+                        <span>🔥 Urgency</span>
+                        <span class="text-[9px] px-1 bg-cyan-950 text-cyan-400 font-mono rounded">Score</span>
+                    </button>
+                    <button type="button" onclick="applyQuestionTemplate('safety')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+                        <span>🛡️ Safety Guard</span>
+                        <span class="text-[9px] px-1 bg-emerald-950 text-emerald-400 font-mono rounded">Noul</span>
+                    </button>
+                    <button type="button" onclick="applyQuestionTemplate('routing')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+                        <span>🧭 Router</span>
+                        <span class="text-[9px] px-1 bg-rose-950 text-rose-400 font-mono rounded">Choice</span>
+                    </button>
+                </div>
+            </div>
+
+            <form id="question-form" onsubmit="saveQuestionFromModal(event)" class="space-y-4">
+                <input type="hidden" id="q-edit-index" value="-1">
+
+                <!-- Type Selector Cards -->
+                <div>
+                    <label class="text-xs font-semibold text-slate-300 block mb-1.5">เลือกประเภทคำถาม (Primitive Type):</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="selectQuestionType('choice')" id="type-btn-choice" class="p-3 rounded-xl border text-left transition flex flex-col justify-between border-rose-500 bg-rose-950/30 text-white">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs font-bold text-rose-400">Choice</span>
+                                <span class="w-2 h-2 rounded-full bg-rose-500" id="dot-choice"></span>
+                            </div>
+                            <p class="text-[10px] text-slate-400 leading-tight">จำแนกประเภทตัวเลือกเดี่ยว</p>
+                        </button>
+
+                        <button type="button" onclick="selectQuestionType('score')" id="type-btn-score" class="p-3 rounded-xl border text-left transition flex flex-col justify-between border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs font-bold text-cyan-400">Score</span>
+                                <span class="w-2 h-2 rounded-full bg-cyan-500 hidden" id="dot-score"></span>
+                            </div>
+                            <p class="text-[10px] text-slate-400 leading-tight">ประเมินคะแนนระดับตัวเลข</p>
+                        </button>
+
+                        <button type="button" onclick="selectQuestionType('noul')" id="type-btn-noul" class="p-3 rounded-xl border text-left transition flex flex-col justify-between border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs font-bold text-emerald-400">Noul</span>
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 hidden" id="dot-noul"></span>
+                            </div>
+                            <p class="text-[10px] text-slate-400 leading-tight">True/False หรือ OOD</p>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question ID & Instructions -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-1">
+                        <label class="text-xs font-semibold text-slate-300 block mb-1">Question ID:</label>
+                        <input type="text" id="q-id-input" required pattern="[a-zA-Z0-9_-]+" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-rose-500 outline-none" placeholder="เช่น intent">
+                        <p class="text-[9px] text-slate-500 mt-1">ภาษาอังกฤษ/ขีดล่าง</p>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="text-xs font-semibold text-slate-300 block mb-1">คำถาม / คำสั่ง (Instructions):</label>
+                        <input type="text" id="q-instructions-input" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-rose-500 outline-none" placeholder="เช่น ระบุความประสงค์หลักของข้อความ">
+                    </div>
+                </div>
+
+                <!-- Dynamic Criteria Section -->
+                <div class="p-3.5 bg-slate-950/80 rounded-xl border border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-300" id="criteria-section-title">เกณฑ์การตัดสิน (Criteria):</label>
+                            <p class="text-[10px] text-slate-500" id="criteria-section-subtitle">กำหนดตัวเลือกและความหมายสำหรับแต่ละคำตอบ</p>
+                        </div>
+                        <button type="button" id="add-option-btn" onclick="addCriteriaItem()" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 text-rose-300 hover:bg-slate-700 border border-slate-700 transition flex items-center gap-1">
+                            <span>+ เพิ่มตัวเลือก</span>
+                        </button>
+                    </div>
+
+                    <!-- Container for Choice / Score / Noul items -->
+                    <div id="criteria-items-container" class="space-y-2 max-h-52 overflow-y-auto pr-1">
+                        <!-- Injected by renderCriteriaForm() -->
+                    </div>
+                </div>
+
+                <!-- Modal Action Buttons -->
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeQuestionModal()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" id="save-q-btn" class="px-5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white transition shadow-md">
+                        บันทึกคำถาม
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // Preset Definitions
+        const PRESETS = {
+            support: {
+                state: "Customer: 'I was charged twice for my subscription invoice #INV-9821 on Sept 18. Please refund the extra $49 immediately or I will contact my credit card company!'",
+                questions: [
+                    {
+                        id: "intent",
+                        type: "choice",
+                        instructions: "ระบุความประสงค์หลักของลูกค้าจากข้อความนี้",
+                        criteria: {
+                            "refund": "ต้องการเงินคืนเนื่องจากถูกตัดเงินซ้ำซ้อนหรือบริการมีปัญหา",
+                            "inquiry": "สอบถามข้อมูลทั่วไปเกี่ยวกับค่าบริการ",
+                            "cancellation": "ต้องการยกเลิกการใช้บริการทั้งหมด",
+                            "other": "เรื่องอื่นๆ ที่ไม่อยู่ในตัวเลือกข้างต้น"
+                        }
+                    },
+                    {
+                        id: "urgency",
+                        type: "score",
+                        instructions: "ประเมินระดับความเร่งด่วนและอารมณ์ของลูกค้า (0: ต่ำ, 1: ปานกลาง, 2: สูง/ขู่ดำเนินคดี)",
+                        criteria: [
+                            "ปกติ สอบถามทั่วไป ไม่มีท่าทีไม่พอใจ",
+                            "เริ่มไม่พอใจ ต้องการคำตอบในเวลาอันควร",
+                            "เร่งด่วนมาก ไม่พอใจรุนแรง ขู่ยกเลิกหรือติดต่อธนาคาร"
+                        ]
+                    },
+                    {
+                        id: "needs_human",
+                        type: "noul",
+                        instructions: "กรณีนี้จำเป็นต้องส่งต่อให้เจ้าหน้าที่มนุษย์ (Human Agent) ดูแลโดยตรงหรือไม่",
+                        criteria: {
+                            "true": "ต้องใช้ดุลยพินิจของมนุษย์ หรือมีการพิพาททางการเงิน",
+                            "false": "ระบบอัตโนมัติหรือบอทสามารถคืนเงินตามนโยบายได้เอง"
+                        }
+                    }
+                ]
+            },
+            thai_complaint: {
+                model: "iapp/OpenThai-SystemOne",
+                state: "สั่งของไปตั้งแต่อาทิตย์ก่อน โดนร้านแม่ค้าในตต.แกง ส่งสบู่ก้อนละ 5 บาทมาแทนมือถือ ทักแชทไปโดนบล็อกหนี เงิน 15,000 หายวับ ร้องเรียน สคบ. ด่วนๆ",
+                questions: [
+                    {
+                        id: "complaint_category",
+                        type: "choice",
+                        instructions: "จำแนกประเภทข้อร้องเรียนของผู้บริโภค",
+                        criteria: {
+                            "fraud_scam": "มิจฉาชีพ/หลอกลวงส่งของไม่ตรงปก/ฉ้อโกง",
+                            "late_delivery": "สินค้าจัดส่งล่าช้ากว่ากำหนด",
+                            "defective_product": "สินค้าชำรุดเสียหายจากการขนส่ง",
+                            "customer_inquiry": "สอบถามข้อมูลทั่วไปหรือสถานะพัสดุ"
+                        }
+                    },
+                    {
+                        id: "urgency_score",
+                        type: "score",
+                        instructions: "ประเมินระดับความเร่งด่วนและความเสียหาย (0: ต่ำ, 1: ปานกลาง, 2: ร้ายแรง/สูญเสียทรัพย์สินมูลค่าสูง)",
+                        criteria: [
+                            "ต่ำ ไม่มีผลกระทบทางการเงิน",
+                            "ปานกลาง สินค้าล่าช้าหรือผิดแบบเล็กน้อย",
+                            "ร้ายแรง เข้าข่ายฉ้อโกง/สูญเสียเงินจำนวนมาก"
+                        ]
+                    },
+                    {
+                        id: "escalate_legal",
+                        type: "noul",
+                        instructions: "ส่งต่อฝ่ายกฎหมาย/ประสานงาน สคบ. และอายัดบัญชีร้านค้าทันทีหรือไม่",
+                        criteria: {
+                            "true": "อายัดบัญชีและส่งเรื่องฝ่ายกฎหมายทันที",
+                            "false": "ให้ฝ่ายบริการลูกค้าติดต่อประสานงานเบื้องต้นก่อน"
+                        }
+                    }
+                ]
+            },
+            guard: {
+                state: "Agent Action Request:\nTool: execute_terminal_command\nCommand: 'rm -rf /var/log/app/* && docker restart api_service'\nContext: User requested to free up disk space on production server.",
+                questions: [
+                    {
+                        id: "risk_level",
+                        type: "choice",
+                        instructions: "ประเมินระดับความเสี่ยงของคำสั่งนี้ต่อระบบ",
+                        criteria: {
+                            "safe": "คำสั่งอ่านข้อมูลอย่างเดียว ไม่มีผลกระทบข้างเคียง",
+                            "medium": "ลบไฟล์ชั่วคราว ไม่กระทบดาต้าเบสหรือความต่อเนื่องของระบบ",
+                            "critical": "รีสตาร์ตเซอร์วิส หรือลบข้อมูลสำคัญ มีความเสี่ยงต่อ Downtime"
+                        }
+                    },
+                    {
+                        id: "requires_human_approval",
+                        type: "noul",
+                        instructions: "ต้องได้รับการยืนยันจากวิศวกรผู้ดูแลระบบ (Human-in-the-loop) ก่อนรันหรือไม่",
+                        criteria: {
+                            "true": "ความเสี่ยงระดับสูงหรือกระทบ Production ต้องรอการอนุมัติ",
+                            "false": "สามารถดำเนินการอัตโนมัติได้ทันที"
+                        }
+                    },
+                    {
+                        id: "reversibility_score",
+                        type: "score",
+                        instructions: "ความสามารถในการย้อนกลับการกระทำ (Reversibility: 0=ย้อนกลับไม่ได้เลย, 2=ย้อนกลับได้สมบูรณ์)",
+                        criteria: [
+                            "ไม่สามารถย้อนกลับได้ (Irreversible)",
+                            "ย้อนกลับได้บางส่วนด้วยความพยายามสูง",
+                            "ย้อนกลับได้ง่ายดาย (Reversible)"
+                        ]
+                    }
+                ]
+            },
+            router: {
+                state: "Project Spec: 'ต้องการพัฒนาระบบทำนายการผิดนัดชำระหนี้ (Credit Default) จากตารางฐานข้อมูลลูกค้า 500,000 แถว มีฟีเจอร์ตัวเลข 40 ตัว และข้อมูลกลุ่ม 10 ตัว พร้อมทั้งต้องการคำอธิบาย Feature Importance สำหรับฝ่ายตรวจสอบ'",
+                questions: [
+                    {
+                        id: "best_architecture",
+                        type: "choice",
+                        instructions: "เลือกสถาปัตยกรรม Machine Learning ที่เหมาะสมที่สุดสำหรับงานนี้",
+                        criteria: {
+                            "gbdt_xgboost": "Gradient Boosted Decision Trees (XGBoost/LightGBM/CatBoost) เหมาะกับ Tabular Data",
+                            "deep_neural_net": "Deep MLP หรือ TabNet โครงข่ายประสาทลึก",
+                            "linear_logistic": "Logistic Regression แบบคลาสสิก",
+                            "svm": "Support Vector Machine"
+                        }
+                    },
+                    {
+                        id: "explainability_demand",
+                        type: "score",
+                        instructions: "ระดับความต้องการในการอธิบายโมเดล (Explainability 0-2)",
+                        criteria: [
+                            "ต้องการแค่ความแม่นยำ กล่องดำยอมรับได้",
+                            "ต้องการคำอธิบายระดับกลุ่มฟีเจอร์",
+                            "เข้มงวดมาก ต้องมี SHAP/Feature attribution ตามกฎหมาย"
+                        ]
+                    }
+                ]
+            },
+            moderation: {
+                state: "Product Title: 'Organic Miracle Slimming Pills - Guaranteed 10kg loss in 3 days! No FDA needed.'\nDescription: 'Secret medical formula imported privately. Dissolves fat instantly while sleeping. 100% money back, cash on delivery.'",
+                questions: [
+                    {
+                        id: "violation_type",
+                        type: "choice",
+                        instructions: "ระบุประเภทการละเมิดนโยบายของรายการสินค้านี้",
+                        criteria: {
+                            "medical_claims": "โฆษณาโอ้อวดสรรพคุณทางการแพทย์/ยาลดน้ำหนักเกินจริงโดยไม่มี อย.",
+                            "counterfeit": "สินค้าละเมิดลิขสิทธิ์หรือเลียนแบบตราสินค้า",
+                            "prohibited_items": "อาวุธ สารเสพติด หรือสิ่งของผิดกฎหมายร้ายแรง",
+                            "clean": "ถูกต้องตามนโยบายมาตรฐานของแพลตฟอร์ม"
+                        }
+                    },
+                    {
+                        id: "risk_score",
+                        type: "score",
+                        instructions: "ประเมินระดับความเสี่ยงทางกฎหมายและอันตรายต่อผู้บริโภค (0: ปลอดภัย, 1: สุ่มเสี่ยง, 2: อันตรายร้ายแรง)",
+                        criteria: [
+                            "ปลอดภัย ไม่มีความเสี่ยงต่อผู้บริโภค",
+                            "โฆษณาเกินจริงเล็กน้อย ต้องรอเจ้าหน้าที่ตรวจสอบ",
+                            "ความเสี่ยงสูงมาก เป็นอันตรายต่อสุขภาพหรือผิดกฎหมายสาธารณสุข"
+                        ]
+                    },
+                    {
+                        id: "auto_ban",
+                        type: "noul",
+                        instructions: "ควรระงับ (Block) สินค้านี้ออกจากระบบค้นหาทันทีโดยอัตโนมัติหรือไม่",
+                        criteria: {
+                            "true": "ระงับทันทีเพื่อปกป้องผู้ซื้อ",
+                            "false": "อนุญาตให้อยู่ในสถานะรอการตรวจสอบ (Pending Review)"
+                        }
+                    }
+                ]
+            },
+            devops: {
+                state: "Alert: Pod 'checkout-service-78f9b' CrashLoopBackOff\nError: OOMKilled (Memory limit 2Gi exceeded during flash sale peak)\nImpact: HTTP 500 error rate spiked to 14.8% on payment gateway in production-ap-southeast-1.",
+                questions: [
+                    {
+                        id: "severity",
+                        type: "choice",
+                        instructions: "ประเมินระดับความรุนแรงของอุบัติการณ์ (Incident Severity)",
+                        criteria: {
+                            "sev1_critical": "วิกฤตระดับสูงสุด กระทบรายได้และระบบชำระเงินหลักล่ม",
+                            "sev2_major": "ฟังก์ชันบางส่วนทำงานช้าแต่ยังมีช่องทางสำรอง",
+                            "sev3_minor": "งานเบื้องหลังหรือเครื่องมือภายในล่าช้า ไม่กระทบผู้ใช้ภายนอก"
+                        }
+                    },
+                    {
+                        id: "wake_oncall",
+                        type: "noul",
+                        instructions: "ต้องโทรปลุก On-call Engineer ผ่าน PagerDuty ทันทีหรือไม่",
+                        criteria: {
+                            "true": "ต้องปลุกทันที เกิดความเสียหายต่อธุรกรรมจริง",
+                            "false": "ระบบ Self-healing จัดการได้หรือรอตรวจในเวลาทำการ"
+                        }
+                    },
+                    {
+                        id: "auto_rollback_eligible",
+                        type: "noul",
+                        instructions: "ปลอดภัยพอที่จะรันคำสั่ง Automated Rollback ไปยัง Release ก่อนหน้าหรือไม่",
+                        criteria: {
+                            "true": "ความผิดพลาดสอดคล้องกับการ Deploy ล่าสุด สามารถ Rollback ได้อย่างปลอดภัย",
+                            "false": "เป็นปัญหาที่ Database หรือ External API การ Rollback อาจไม่ช่วยแก้ปัญหา"
+                        }
+                    }
+                ]
+            },
+            fraud: {
+                state: "Transaction Details:\nAmount: $1,450.00 to 'CryptoExchange_KY'\nCardholder Home: Bangkok, Thailand\nDevice IP: Lagos, Nigeria (Via TOR Exit Node)\nTime: 03:22 AM local time\nHistorical Cardholder Spend: Average $35/day, never purchased crypto.",
+                questions: [
+                    {
+                        id: "action",
+                        type: "choice",
+                        instructions: "มาตรการความปลอดภัยที่ต้องดำเนินการกับรายการนี้",
+                        criteria: {
+                            "approve": "อนุมัติรายการทันที รูปแบบการใช้จ่ายปกติ",
+                            "step_up_otp": "ระงับชั่วคราวและร้องขอการยืนยันตัวตนขั้นสอง (SMS/Biometric OTP)",
+                            "block_and_freeze": "ปฏิเสธรายการและระงับบัตรชั่วคราวเนื่องจากมีความน่าจะเป็นของการขโมยข้อมูลบัตรสูงมาก"
+                        }
+                    },
+                    {
+                        id: "fraud_probability",
+                        type: "noul",
+                        instructions: "ความน่าจะเป็นที่รายการนี้เป็นการทุจริต (Fraudulent Transaction)",
+                        criteria: {
+                            "true": "เป็นการโจรกรรมหรือการใช้บัตรโดยไม่ได้รับอนุญาต",
+                            "false": "เจ้าของบัตรทำรายการเองจริง"
+                        }
+                    }
+                ]
+            },
+            pruning: {
+                state: "Agent Tool History:\nRan 'pytest tests/test_payment.py' 10 times consecutively during debugging.\nAttempt 1-9: Failed with 450 lines of Python tracebacks showing typo in mock token.\nAttempt 10: Succeeded! (All 28 tests passed in 1.4s).",
+                questions: [
+                    {
+                        id: "retention_strategy",
+                        type: "choice",
+                        instructions: "เลือกกลยุทธ์การบีบอัด Context เพื่อส่งต่อให้ LLM ในรอบถัดไป",
+                        criteria: {
+                            "drop_entirely": "ทิ้งทั้งหมด ไม่มีประโยชน์ต่อรอบถัดไป",
+                            "keep_summary_only": "ตัด Error Traceback 1-9 ทิ้งทั้งหมด เก็บเฉพาะผลการรันสำเร็จรอบที่ 10",
+                            "keep_verbatim": "เก็บ Log ทั้งหมดอย่างละเอียดครบถ้วนทุกบรรทัด"
+                        }
+                    },
+                    {
+                        id: "noise_score",
+                        type: "score",
+                        instructions: "ระดับความรกของข้อความ (Noise level: 0: มีสาระสำคัญทั้งหมด, 2: เป็นขยะซ้ำซ้อนที่ไม่จำเป็น)",
+                        criteria: [
+                            "สาระสำคัญ มีความรู้ที่ต้องใช้อ้างอิง",
+                            "มีทั้งสาระและขยะปะปนกัน",
+                            "ขยะซ้ำซ้อนสูงมาก (Redundant Error Logs)"
+                        ]
+                    }
+                ]
+            },
+            custom: {
+                state: "ใส่ State หรือข้อความของคุณที่นี่...",
+                questions: [
+                    {
+                        id: "q1",
+                        type: "choice",
+                        instructions: "คำถามตัวเลือกของคุณ",
+                        criteria: {
+                            "option_a": "คำอธิบายตัวเลือก A",
+                            "option_b": "คำอธิบายตัวเลือก B"
+                        }
+                    }
+                ]
+            }
+        };
+
+        let currentQuestions = [];
+        let activeTab = 'response';
+        let lastResponseData = null;
+        let lastRequestPayload = null;
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            checkStoredApiKey();
+            loadPreset('support');
+        });
+
+        function checkStoredApiKey() {
+            const jevKey = localStorage.getItem('JEV_API_KEY') || '';
+            const iappKey = localStorage.getItem('IAPP_API_KEY') || '';
+            const endpoint = localStorage.getItem('JEV_API_ENDPOINT') || '';
+            
+            const jevInput = document.getElementById('jev-api-key-input');
+            const iappInput = document.getElementById('iapp-api-key-input');
+            const endpointInput = document.getElementById('api-endpoint-input');
+            
+            if (jevInput) jevInput.value = jevKey;
+            if (iappInput) iappInput.value = iappKey;
+            if (endpointInput) endpointInput.value = endpoint;
+
+            const remember = localStorage.getItem('REMEMBER_API_KEYS') === 'true';
+            const rememberCheckbox = document.getElementById('save-key-checkbox');
+            if (rememberCheckbox) rememberCheckbox.checked = remember || !!(jevKey || iappKey);
+
+            updateKeyIndicators();
+        }
+
+        function updateKeyIndicators() {
+            const modelSelect = document.getElementById('model-select');
+            const currentModel = modelSelect ? modelSelect.value : 'typesafe/jev-1.13';
+            const isOpenThai = currentModel.includes('OpenThai');
+
+            const jevKey = document.getElementById('jev-api-key-input')?.value.trim() || localStorage.getItem('JEV_API_KEY') || '';
+            const iappKey = document.getElementById('iapp-api-key-input')?.value.trim() || localStorage.getItem('IAPP_API_KEY') || '';
+
+            // Update status indicators in modal
+            const jevStatus = document.getElementById('jev-key-status');
+            if (jevStatus) {
+                jevStatus.textContent = jevKey ? "✅ บันทึกคีย์แล้ว" : "ยังไม่ได้ใส่คีย์";
+                jevStatus.className = jevKey ? "text-[10px] text-emerald-400 font-mono font-semibold" : "text-[10px] text-slate-500 font-mono";
+            }
+            const iappStatus = document.getElementById('iapp-key-status');
+            if (iappStatus) {
+                iappStatus.textContent = iappKey ? "✅ บันทึกคีย์แล้ว" : "ยังไม่ได้ใส่คีย์";
+                iappStatus.className = iappKey ? "text-[10px] text-emerald-400 font-mono font-semibold" : "text-[10px] text-slate-500 font-mono";
+            }
+
+            // Update top action button & mode badge based on currently selected model
+            const indicator = document.getElementById('key-indicator');
+            const label = document.getElementById('key-label');
+            const modeBadge = document.getElementById('mode-badge');
+
+            if (isOpenThai) {
+                if (iappKey) {
+                    if (indicator) indicator.className = "w-2 h-2 rounded-full bg-indigo-400";
+                    if (label) label.innerText = "iApp Key พร้อมใช้งาน";
+                    if (modeBadge) {
+                        modeBadge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-950/60 text-indigo-300 border border-indigo-800/40";
+                        modeBadge.innerText = "Live API (iApp OpenThai)";
+                    }
+                } else {
+                    if (indicator) indicator.className = "w-2 h-2 rounded-full bg-amber-400";
+                    if (label) label.innerText = "ตั้งค่า iApp Key";
+                    if (modeBadge) {
+                        modeBadge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700";
+                        modeBadge.innerText = "โหมดจำลอง (Mock Demo)";
+                    }
+                }
+            } else {
+                if (jevKey) {
+                    if (indicator) indicator.className = "w-2 h-2 rounded-full bg-emerald-400";
+                    if (label) label.innerText = "Jev Key พร้อมใช้งาน";
+                    if (modeBadge) {
+                        modeBadge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40";
+                        modeBadge.innerText = "Live API (Jev Server)";
+                    }
+                } else {
+                    if (indicator) indicator.className = "w-2 h-2 rounded-full bg-amber-400";
+                    if (label) label.innerText = "ตั้งค่า Jev Key";
+                    if (modeBadge) {
+                        modeBadge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700";
+                        modeBadge.innerText = "โหมดจำลอง (Mock Demo)";
+                    }
+                }
+            }
+        }
+
+        function openApiKeyModal() {
+            document.getElementById('api-key-modal').classList.remove('hidden');
+            document.getElementById('api-key-modal').classList.add('flex');
+            updateKeyIndicators();
+        }
+
+        function closeApiKeyModal() {
+            document.getElementById('api-key-modal').classList.add('hidden');
+            document.getElementById('api-key-modal').classList.remove('flex');
+        }
+
+        function toggleKeyVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.type = input.type === 'password' ? 'text' : 'password';
+            }
+        }
+
+        function saveApiKey() {
+            const jevKey = document.getElementById('jev-api-key-input')?.value.trim() || '';
+            const iappKey = document.getElementById('iapp-api-key-input')?.value.trim() || '';
+            const endpoint = document.getElementById('api-endpoint-input')?.value.trim() || '';
+            const remember = document.getElementById('save-key-checkbox')?.checked;
+
+            if (remember) {
+                localStorage.setItem('REMEMBER_API_KEYS', 'true');
+                if (jevKey) localStorage.setItem('JEV_API_KEY', jevKey);
+                else localStorage.removeItem('JEV_API_KEY');
+
+                if (iappKey) localStorage.setItem('IAPP_API_KEY', iappKey);
+                else localStorage.removeItem('IAPP_API_KEY');
+
+                if (endpoint) localStorage.setItem('JEV_API_ENDPOINT', endpoint);
+                else localStorage.removeItem('JEV_API_ENDPOINT');
+            } else {
+                localStorage.removeItem('REMEMBER_API_KEYS');
+                localStorage.removeItem('JEV_API_KEY');
+                localStorage.removeItem('IAPP_API_KEY');
+                localStorage.removeItem('JEV_API_ENDPOINT');
+            }
+
+            updateKeyIndicators();
+            closeApiKeyModal();
+        }
+
+        function clearApiKey() {
+            if (document.getElementById('jev-api-key-input')) document.getElementById('jev-api-key-input').value = '';
+            if (document.getElementById('iapp-api-key-input')) document.getElementById('iapp-api-key-input').value = '';
+            if (document.getElementById('api-endpoint-input')) document.getElementById('api-endpoint-input').value = '';
+            localStorage.removeItem('JEV_API_KEY');
+            localStorage.removeItem('IAPP_API_KEY');
+            localStorage.removeItem('JEV_API_ENDPOINT');
+            localStorage.removeItem('REMEMBER_API_KEYS');
+            updateKeyIndicators();
+            closeApiKeyModal();
+        }
+
+        function loadPreset(key) {
+            const preset = PRESETS[key] || PRESETS.custom;
+            document.getElementById('state-input').value = preset.state;
+            const modelSelect = document.getElementById('model-select');
+            // If preset specifically specifies a model (e.g. thai_complaint), switch to it;
+            // otherwise, keep whatever model the user has currently selected
+            if (modelSelect && preset.model) {
+                modelSelect.value = preset.model;
+            }
+            if (modelSelect) {
+                onModelSelectChange(modelSelect.value);
+            }
+            currentQuestions = JSON.parse(JSON.stringify(preset.questions));
+            renderQuestions();
+        }
+
+        function onModelSelectChange(val) {
+            const hint = document.getElementById('model-hint');
+            const activeBadge = document.getElementById('active-model-badge');
+            const headerBadge = document.getElementById('header-model-badge');
+
+            if (val && val.includes('OpenThai')) {
+                if (activeBadge) {
+                    activeBadge.className = "text-indigo-400 font-semibold bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-900/40";
+                    activeBadge.textContent = "iapp/OpenThai-SystemOne";
+                }
+                if (headerBadge) {
+                    headerBadge.textContent = "iapp/OpenThai-SystemOne";
+                    headerBadge.className = "hidden sm:inline-block text-[10px] font-mono text-indigo-300 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800";
+                }
+                if (hint) {
+                    hint.className = "text-[11px] px-2.5 py-1.5 rounded-lg bg-indigo-950/50 border border-indigo-800/60 text-indigo-200 flex items-center justify-between";
+                    hint.innerHTML = `
+                        <span>🇹🇭 <strong>Open-Weights (Hugging Face):</strong> โมเดลโอเพนซอร์สของ iApp (รัน Live API ผ่าน iApp Key หรือ Self-hosted)</span>
+                        <a href="https://huggingface.co/iapp/OpenThai-SystemOne" target="_blank" rel="noopener" class="text-[10px] font-mono text-indigo-300 underline shrink-0 ml-2">HF Repo ↗</a>
+                    `;
+                }
+            } else {
+                if (activeBadge) {
+                    activeBadge.className = "text-rose-400 font-semibold bg-rose-950/50 px-2 py-0.5 rounded border border-rose-900/40";
+                    activeBadge.textContent = "typesafe/jev-1.13";
+                }
+                if (headerBadge) {
+                    headerBadge.textContent = "typesafe/jev-1.13";
+                    headerBadge.className = "hidden sm:inline-block text-[10px] font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700";
+                }
+                if (hint) {
+                    hint.className = "text-[11px] px-2.5 py-1.5 rounded-lg bg-slate-950/60 border border-slate-800/80 text-slate-400 flex items-center justify-between";
+                    hint.innerHTML = `
+                        <span>⚡ <strong>TypeSafe Jev Cloud:</strong> รองรับการยิง Live API ผ่านคีย์ของ jevai.org</span>
+                        <span class="text-[10px] text-slate-500 font-mono">Cloud API</span>
+                    `;
+                }
+            }
+
+            updateKeyIndicators();
+        }
+
+        let currentModalType = 'choice';
+        let currentModalCriteria = [];
+
+        function renderQuestions() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            if (currentQuestions.length === 0) {
+                container.innerHTML = `
+                    <div class="py-8 px-4 text-center border border-dashed border-slate-800 rounded-xl space-y-2">
+                        <p class="text-xs text-slate-500 font-medium">ยังไม่มีคำถามในการประเมินนี้</p>
+                        <button onclick="openQuestionModal()" class="text-xs text-rose-400 hover:text-rose-300 font-semibold underline inline-flex items-center gap-1">
+                            <span>+ คลิกที่นี่เพื่อสร้างคำถามแรก</span>
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            currentQuestions.forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = "p-4 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3 relative group transition hover:border-slate-700 shadow-xs";
+
+                let criteriaHtml = '';
+                if (q.type === 'choice') {
+                    const optionsList = Object.entries(q.criteria || {}).map(([optKey, optDesc]) => `
+                        <div class="flex items-center space-x-2 text-xs font-mono">
+                            <span class="px-2 py-0.5 bg-rose-950/60 text-rose-300 border border-rose-900/40 rounded">${optKey}</span>
+                            <span class="text-slate-400 font-sans truncate">${optDesc || '(ไม่มีคำอธิบาย)'}</span>
+                        </div>
+                    `).join('');
+                    criteriaHtml = `<div class="space-y-1.5 pl-2 border-l-2 border-rose-500/40 mt-2">${optionsList}</div>`;
+                } else if (q.type === 'score') {
+                    const levelsList = (q.criteria || []).map((lvl, lIdx) => `
+                        <div class="flex items-center space-x-2 text-xs font-mono">
+                            <span class="w-5 h-5 flex items-center justify-center bg-cyan-950/60 text-cyan-300 border border-cyan-900/40 rounded">${lIdx}</span>
+                            <span class="text-slate-400 font-sans truncate">${lvl}</span>
+                        </div>
+                    `).join('');
+                    criteriaHtml = `<div class="space-y-1.5 pl-2 border-l-2 border-cyan-500/40 mt-2">${levelsList}</div>`;
+                } else if (q.type === 'noul') {
+                    criteriaHtml = `
+                        <div class="grid grid-cols-2 gap-2 text-xs font-mono mt-2">
+                            <div class="p-2 bg-emerald-950/30 border border-emerald-900/30 rounded">
+                                <span class="text-emerald-400 font-bold block mb-0.5">True (ใช่):</span>
+                                <span class="text-slate-400 font-sans">${q.criteria?.true || 'สอดคล้อง'}</span>
+                            </div>
+                            <div class="p-2 bg-slate-900 border border-slate-800 rounded">
+                                <span class="text-slate-400 font-bold block mb-0.5">False (ไม่ใช่):</span>
+                                <span class="text-slate-400 font-sans">${q.criteria?.false || 'ไม่สอดคล้อง'}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2 font-mono">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-bold ${
+                                q.type === 'choice' ? 'bg-rose-900/40 text-rose-400 border border-rose-800/50' :
+                                q.type === 'score' ? 'bg-cyan-900/40 text-cyan-400 border border-cyan-800/50' :
+                                'bg-emerald-900/40 text-emerald-400 border border-emerald-800/50'
+                            }">[${q.type.toUpperCase()}]</span>
+                            <span class="text-xs font-bold text-slate-200">${q.id}</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5 opacity-90 group-hover:opacity-100 transition">
+                            <button onclick="openQuestionModal(${idx})" title="แก้ไขคำถามนี้" class="text-[11px] px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700 transition flex items-center gap-1">
+                                <span>✏️</span><span class="hidden sm:inline">แก้ไข</span>
+                            </button>
+                            <button onclick="duplicateQuestion(${idx})" title="ทำซ้ำคำถามนี้" class="text-[11px] px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 hover:border-slate-700 transition flex items-center gap-1">
+                                <span>📋</span>
+                            </button>
+                            <button onclick="removeQuestion(${idx})" title="ลบคำถามนี้" class="text-[11px] px-2 py-0.5 rounded bg-slate-900 hover:bg-rose-950/50 text-slate-500 hover:text-rose-400 border border-slate-800 hover:border-rose-900/40 transition">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">${q.instructions}</p>
+                    ${criteriaHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function removeQuestion(idx) {
+            currentQuestions.splice(idx, 1);
+            renderQuestions();
+        }
+
+        function duplicateQuestion(idx) {
+            const q = currentQuestions[idx];
+            if (!q) return;
+            const cloned = JSON.parse(JSON.stringify(q));
+            cloned.id = `${q.id}_copy`;
+            currentQuestions.splice(idx + 1, 0, cloned);
+            renderQuestions();
+        }
+
+        function openQuestionModal(editIndex = -1) {
+            const modal = document.getElementById('question-modal');
+            const titleEl = document.getElementById('question-modal-title');
+            const saveBtn = document.getElementById('save-q-btn');
+            const editIndexInput = document.getElementById('q-edit-index');
+
+            editIndexInput.value = editIndex;
+
+            if (editIndex >= 0 && currentQuestions[editIndex]) {
+                const q = currentQuestions[editIndex];
+                titleEl.innerText = `แก้ไขคำถาม: ${q.id}`;
+                saveBtn.innerText = "บันทึกการแก้ไข";
+                document.getElementById('q-id-input').value = q.id;
+                document.getElementById('q-instructions-input').value = q.instructions;
+
+                // Load existing criteria
+                if (q.type === 'choice') {
+                    currentModalCriteria = Object.entries(q.criteria || {}).map(([key, desc]) => ({ key, desc }));
+                } else if (q.type === 'score') {
+                    currentModalCriteria = [...(q.criteria || [])];
+                } else if (q.type === 'noul') {
+                    currentModalCriteria = {
+                        true: q.criteria?.true || '',
+                        false: q.criteria?.false || ''
+                    };
+                }
+                selectQuestionType(q.type, false);
+            } else {
+                titleEl.innerText = "เพิ่มคำถามใหม่ (Add Decision Question)";
+                saveBtn.innerText = "บันทึกคำถาม";
+                document.getElementById('q-id-input').value = `q_${currentQuestions.length + 1}`;
+                document.getElementById('q-instructions-input').value = '';
+                selectQuestionType('choice', true);
+            }
+
+            renderCriteriaForm();
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('q-id-input').focus();
+        }
+
+        function closeQuestionModal() {
+            const modal = document.getElementById('question-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function selectQuestionType(type, resetDefaults = false) {
+            currentModalType = type.toLowerCase();
+
+            // Highlight buttons
+            const types = ['choice', 'score', 'noul'];
+            types.forEach(t => {
+                const btn = document.getElementById(`type-btn-${t}`);
+                const dot = document.getElementById(`dot-${t}`);
+                if (!btn) return;
+                if (t === currentModalType) {
+                    if (t === 'choice') btn.className = "p-3 rounded-xl border text-left transition flex flex-col justify-between border-rose-500 bg-rose-950/30 text-white shadow-sm";
+                    if (t === 'score') btn.className = "p-3 rounded-xl border text-left transition flex flex-col justify-between border-cyan-500 bg-cyan-950/30 text-white shadow-sm";
+                    if (t === 'noul') btn.className = "p-3 rounded-xl border text-left transition flex flex-col justify-between border-emerald-500 bg-emerald-950/30 text-white shadow-sm";
+                    if (dot) dot.classList.remove('hidden');
+                } else {
+                    btn.className = "p-3 rounded-xl border text-left transition flex flex-col justify-between border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700";
+                    if (dot) dot.classList.add('hidden');
+                }
+            });
+
+            // Update modal header indicator
+            const indicator = document.getElementById('modal-type-indicator');
+            if (indicator) {
+                indicator.className = `w-3 h-3 rounded-full ${
+                    currentModalType === 'choice' ? 'bg-rose-500' :
+                    currentModalType === 'score' ? 'bg-cyan-500' : 'bg-emerald-500'
+                }`;
+            }
+
+            const title = document.getElementById('criteria-section-title');
+            const subtitle = document.getElementById('criteria-section-subtitle');
+            const addBtn = document.getElementById('add-option-btn');
+
+            if (currentModalType === 'choice') {
+                if (title) title.innerText = "ตัวเลือกที่ต้องการจำแนก (Choices):";
+                if (subtitle) subtitle.innerText = "ระบุคีย์ตัวเลือก (Key) และคำอธิบายเงื่อนไขของแต่ละตัวเลือก";
+                if (addBtn) { addBtn.style.display = 'flex'; addBtn.innerHTML = '<span>+ เพิ่มตัวเลือก</span>'; }
+                if (resetDefaults || !Array.isArray(currentModalCriteria) || (currentModalCriteria.length > 0 && typeof currentModalCriteria[0] !== 'object')) {
+                    currentModalCriteria = [
+                        { key: "opt_1", desc: "ตัวเลือกที่ 1" },
+                        { key: "opt_2", desc: "ตัวเลือกที่ 2" }
+                    ];
+                }
+            } else if (currentModalType === 'score') {
+                if (title) title.innerText = "ระดับคะแนนและการประเมิน (Score Levels):";
+                if (subtitle) subtitle.innerText = "ระบุคำอธิบายของแต่ละระดับคะแนน (0, 1, 2, ...)";
+                if (addBtn) { addBtn.style.display = 'flex'; addBtn.innerHTML = '<span>+ เพิ่มระดับคะแนน</span>'; }
+                if (resetDefaults || !Array.isArray(currentModalCriteria) || (currentModalCriteria.length > 0 && typeof currentModalCriteria[0] !== 'string')) {
+                    currentModalCriteria = [
+                        "ระดับ 0: ต่ำสุด / ไม่มีความเสี่ยง",
+                        "ระดับ 1: ปานกลาง / ระดับปกติ",
+                        "ระดับ 2: สูงสุด / วิกฤตเร่งด่วน"
+                    ];
+                }
+            } else if (currentModalType === 'noul') {
+                if (title) title.innerText = "เกณฑ์การตรวจสอบ True / False (Noul):";
+                if (subtitle) subtitle.innerText = "ระบุคำอธิบายของเงื่อนไข True (ใช่) และ False (ไม่ใช่)";
+                if (addBtn) { addBtn.style.display = 'none'; }
+                if (resetDefaults || typeof currentModalCriteria !== 'object' || Array.isArray(currentModalCriteria)) {
+                    currentModalCriteria = {
+                        true: "ตรงตามเงื่อนไขที่กำหนดอย่างสมบูรณ์",
+                        false: "ไม่ตรงตามเงื่อนไข หรืออยู่นอกขอบเขต (None of the usual)"
+                    };
+                }
+            }
+
+            renderCriteriaForm();
+        }
+
+        function renderCriteriaForm() {
+            const container = document.getElementById('criteria-items-container');
+            container.innerHTML = '';
+
+            if (currentModalType === 'choice') {
+                currentModalCriteria.forEach((item, idx) => {
+                    const row = document.createElement('div');
+                    row.className = "flex items-center space-x-2";
+                    row.innerHTML = `
+                        <input type="text" value="${item.key}" placeholder="Key" required pattern="[a-zA-Z0-9_-]+" onchange="updateChoiceKey(${idx}, this.value)" class="w-28 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-rose-300 focus:border-rose-500 outline-none">
+                        <input type="text" value="${item.desc}" placeholder="คำอธิบายตัวเลือก" required onchange="updateChoiceDesc(${idx}, this.value)" class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:border-rose-500 outline-none">
+                        <button type="button" onclick="removeCriteriaItem(${idx})" ${currentModalCriteria.length <= 2 ? 'disabled class="opacity-30 cursor-not-allowed px-2 text-slate-500"' : 'class="px-2 text-slate-500 hover:text-rose-400 transition"'} title="ลบตัวเลือกนี้">✕</button>
+                    `;
+                    container.appendChild(row);
+                });
+            } else if (currentModalType === 'score') {
+                currentModalCriteria.forEach((desc, idx) => {
+                    const row = document.createElement('div');
+                    row.className = "flex items-center space-x-2";
+                    row.innerHTML = `
+                        <span class="w-7 h-7 flex items-center justify-center bg-cyan-950/70 text-cyan-300 font-mono font-bold text-xs rounded-lg border border-cyan-800/40">${idx}</span>
+                        <input type="text" value="${desc}" placeholder="คำอธิบายคะแนนระดับ ${idx}" required onchange="updateScoreDesc(${idx}, this.value)" class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:border-cyan-500 outline-none">
+                        <button type="button" onclick="removeCriteriaItem(${idx})" ${currentModalCriteria.length <= 2 ? 'disabled class="opacity-30 cursor-not-allowed px-2 text-slate-500"' : 'class="px-2 text-slate-500 hover:text-rose-400 transition"'} title="ลบระดับนี้">✕</button>
+                    `;
+                    container.appendChild(row);
+                });
+            } else if (currentModalType === 'noul') {
+                container.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-16 text-xs font-mono font-bold text-emerald-400">True:</span>
+                            <input type="text" id="noul-true-input" value="${currentModalCriteria.true || ''}" placeholder="คำอธิบายเมื่อเป็น True (ใช่)" required onchange="currentModalCriteria.true = this.value" class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:border-emerald-500 outline-none">
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="w-16 text-xs font-mono font-bold text-slate-400">False:</span>
+                            <input type="text" id="noul-false-input" value="${currentModalCriteria.false || ''}" placeholder="คำอธิบายเมื่อเป็น False (ไม่ใช่)" required onchange="currentModalCriteria.false = this.value" class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:border-slate-500 outline-none">
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function updateChoiceKey(idx, val) {
+            if (currentModalCriteria[idx]) currentModalCriteria[idx].key = val.trim();
+        }
+
+        function updateChoiceDesc(idx, val) {
+            if (currentModalCriteria[idx]) currentModalCriteria[idx].desc = val.trim();
+        }
+
+        function updateScoreDesc(idx, val) {
+            if (currentModalCriteria[idx] !== undefined) currentModalCriteria[idx] = val.trim();
+        }
+
+        function addCriteriaItem() {
+            if (currentModalType === 'choice') {
+                currentModalCriteria.push({ key: `opt_${currentModalCriteria.length + 1}`, desc: '' });
+            } else if (currentModalType === 'score') {
+                currentModalCriteria.push(`ระดับ ${currentModalCriteria.length}`);
+            }
+            renderCriteriaForm();
+        }
+
+        function removeCriteriaItem(idx) {
+            if (currentModalCriteria.length <= 2) {
+                alert("ต้องมีอย่างน้อย 2 ตัวเลือกหรือระดับคะแนน");
+                return;
+            }
+            currentModalCriteria.splice(idx, 1);
+            renderCriteriaForm();
+        }
+
+        function saveQuestionFromModal(e) {
+            e.preventDefault();
+            const editIndex = parseInt(document.getElementById('q-edit-index').value, 10);
+            const id = document.getElementById('q-id-input').value.trim();
+            const instructions = document.getElementById('q-instructions-input').value.trim();
+
+            if (!id || !instructions) {
+                alert("กรุณากรอก Question ID และคำถามให้ครบถ้วน");
+                return;
+            }
+
+            // Check duplicate ID
+            const existingIdx = currentQuestions.findIndex(q => q.id === id);
+            if (existingIdx !== -1 && existingIdx !== editIndex) {
+                alert(`Question ID "${id}" มีอยู่แล้ว กรุณาตั้งชื่ออื่น`);
+                return;
+            }
+
+            let criteria = null;
+            if (currentModalType === 'choice') {
+                criteria = {};
+                currentModalCriteria.forEach(item => {
+                    if (item.key) criteria[item.key] = item.desc || item.key;
+                });
+                if (Object.keys(criteria).length < 2) {
+                    alert("Choice ต้องมีอย่างน้อย 2 ตัวเลือก");
+                    return;
+                }
+            } else if (currentModalType === 'score') {
+                criteria = currentModalCriteria.map(s => s.trim()).filter(Boolean);
+                if (criteria.length < 2) {
+                    alert("Score ต้องมีอย่างน้อย 2 ระดับคะแนน");
+                    return;
+                }
+            } else if (currentModalType === 'noul') {
+                const trueVal = document.getElementById('noul-true-input')?.value.trim() || currentModalCriteria.true || "ใช่";
+                const falseVal = document.getElementById('noul-false-input')?.value.trim() || currentModalCriteria.false || "ไม่ใช่";
+                criteria = { true: trueVal, false: falseVal };
+            }
+
+            const newQ = {
+                id,
+                type: currentModalType,
+                instructions,
+                criteria
+            };
+
+            if (editIndex >= 0 && editIndex < currentQuestions.length) {
+                currentQuestions[editIndex] = newQ;
+            } else {
+                currentQuestions.push(newQ);
+            }
+
+            renderQuestions();
+            closeQuestionModal();
+        }
+
+        function applyQuestionTemplate(key) {
+            const templates = {
+                sentiment: {
+                    type: 'choice',
+                    id: 'sentiment',
+                    instructions: 'วิเคราะห์อารมณ์และความรู้สึกของข้อความนี้',
+                    criteria: [
+                        { key: 'positive', desc: 'ความรู้สึกเชิงบวก พอใจ ชื่นชม' },
+                        { key: 'neutral', desc: 'เป็นกลาง ข้อเท็จจริงทั่วไป ไม่แสดงอารมณ์ชัดเจน' },
+                        { key: 'negative', desc: 'เชิงลบ ไม่พอใจ ร้องเรียน หรือตำหนิ' }
+                    ]
+                },
+                urgency: {
+                    type: 'score',
+                    id: 'urgency_level',
+                    instructions: 'ประเมินระดับความเร่งด่วนในการตอบสนองคำขอนี้',
+                    criteria: [
+                        'ระดับ 0: สอบถามทั่วไป ไม่เร่งด่วน',
+                        'ระดับ 1: ปานกลาง ควรตอบกลับภายใน 24 ชม.',
+                        'ระดับ 2: ด่วนมาก ต้องการความช่วยเหลือทันที หรือมีความเสี่ยงสูง'
+                    ]
+                },
+                safety: {
+                    type: 'noul',
+                    id: 'is_safe',
+                    instructions: 'ตรวจสอบว่าข้อความนี้ปลอดภัยและไม่ขัดต่อนโยบายความปลอดภัย',
+                    criteria: {
+                        true: 'ข้อความปลอดภัย ไม่พบ Prompt Injection หรือเนื้อหาต้องห้าม',
+                        false: 'ตรวจพบความพยายาม Jailbreak, คำหยาบคาย หรือละเมิดนโยบาย'
+                    }
+                },
+                routing: {
+                    type: 'choice',
+                    id: 'team_router',
+                    instructions: 'จำแนกแผนกหรือทีมที่ควรรับผิดชอบคำขอนี้',
+                    criteria: [
+                        { key: 'sales', desc: 'สนใจซื้อบริการ ขอใบเสนอราคา หรือสอบถามแพ็กเกจ' },
+                        { key: 'billing', desc: 'ปัญหาการชำระเงิน ใบเสร็จ การคืนเงิน' },
+                        { key: 'support', desc: 'ปัญหาการใช้งานทางเทคนิค ข้อผิดพลาดของระบบ' }
+                    ]
+                }
+            };
+
+            const tmpl = templates[key];
+            if (!tmpl) return;
+
+            document.getElementById('q-id-input').value = tmpl.id;
+            document.getElementById('q-instructions-input').value = tmpl.instructions;
+            currentModalCriteria = JSON.parse(JSON.stringify(tmpl.criteria));
+            selectQuestionType(tmpl.type, false);
+            renderCriteriaForm();
+        }
+
+        async function runDecision(forceMock = false) {
+            const state = document.getElementById('state-input').value.trim();
+            if (!state) {
+                alert("กรุณาระบุ State ก่อนรัน");
+                return;
+            }
+            if (currentQuestions.length === 0) {
+                alert("กรุณาเพิ่มอย่างน้อย 1 คำถาม");
+                return;
+            }
+
+            const questionsPayload = {};
+            currentQuestions.forEach(q => {
+                questionsPayload[q.id] = {
+                    type: q.type,
+                    instructions: q.instructions,
+                    criteria: q.criteria
+                };
+            });
+
+            const selectedModel = document.getElementById('model-select')?.value || "typesafe/jev-1.13";
+            const payload = {
+                model: selectedModel,
+                state: state,
+                questions: questionsPayload
+            };
+
+            lastRequestPayload = payload;
+
+            const isOpenThai = selectedModel.includes('OpenThai');
+            const jevKey = document.getElementById('jev-api-key-input')?.value.trim() || localStorage.getItem('JEV_API_KEY') || '';
+            const iappKey = document.getElementById('iapp-api-key-input')?.value.trim() || localStorage.getItem('IAPP_API_KEY') || '';
+            const activeKey = isOpenThai ? iappKey : jevKey;
+
+            const statusIcon = document.getElementById('status-icon');
+            const statusText = document.getElementById('status-text');
+            const latencyText = document.getElementById('latency-text');
+            const runBtn = document.getElementById('run-btn');
+            const mockBtn = document.getElementById('mock-btn');
+
+            runBtn.disabled = true;
+            runBtn.classList.add('opacity-70');
+            if (mockBtn) { mockBtn.disabled = true; mockBtn.classList.add('opacity-70'); }
+            statusIcon.innerText = "⏳";
+            statusText.innerText = (forceMock || !activeKey) ? "กำลังประมวลผล (Mock)..." : `กำลังส่งคำขอไปยัง ${isOpenThai ? 'iApp Live API' : 'TypeSafe Live API'}...`;
+
+            const startTime = performance.now();
+
+            try {
+                let data = null;
+                let elapsedMs = 0;
+
+                // Determine endpoint
+                let endpoint = localStorage.getItem('JEV_API_ENDPOINT');
+                if (!endpoint) {
+                    if (window.location.origin.includes('localhost')) {
+                        // Local proxy handles both Jev (jevai.org) and OpenThai (api.iapp.co.th) routing!
+                        endpoint = '/api/v1/decisions';
+                    } else if (isOpenThai) {
+                        endpoint = 'https://api.iapp.co.th/v3/store/openthai/systemone';
+                    } else {
+                        endpoint = 'https://www.jevai.org/api/v1/decisions';
+                    }
+                }
+
+                // If user provided the active API key and didn't force mock, execute LIVE API!
+                if (activeKey && !forceMock) {
+                    const headers = {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${activeKey}`
+                    };
+                    if (isOpenThai) {
+                        headers["apikey"] = activeKey;
+                    }
+
+                    const response = await fetch(endpoint, {
+                        method: "POST",
+                        headers: headers,
+                        body: JSON.stringify(payload)
+                    });
+
+                    elapsedMs = Math.round(performance.now() - startTime);
+
+                    if (!response.ok) {
+                        const errBody = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errBody || response.statusText}`);
+                    }
+
+                    data = await response.json();
+                } else {
+                    // Simulated / Mock Execution (when no API key is provided or mock button clicked)
+                    await new Promise(r => setTimeout(r, isOpenThai ? 94 : 115));
+                    elapsedMs = Math.round(performance.now() - startTime);
+                    data = generateMockResponse(currentQuestions, elapsedMs, selectedModel);
+                    if (isOpenThai && !forceMock && !activeKey) {
+                        data.simulatedNotice = "กำลังรันโหมดจำลอง (Simulated): กดปุ่ม 'ตั้งค่า iApp Key' ด้านบนแล้วใส่ iApp API Key เพื่อเชื่อมต่อกับโมเดลตัวจริง";
+                    }
+                }
+
+                lastResponseData = data;
+                statusIcon.innerText = "⚡";
+                statusText.innerText = (forceMock || data.simulatedNotice) ? `ประเมินสำเร็จ (Simulated: ${selectedModel})` : `ประเมินสำเร็จ (200 OK: ${selectedModel})`;
+                latencyText.innerText = `Latency: ${data.elapsedMs || elapsedMs} ms`;
+
+                renderResults(data);
+                updateInspector();
+
+            } catch (err) {
+                statusIcon.innerText = "❌";
+                statusText.innerText = "เกิดข้อผิดพลาด";
+                latencyText.innerText = `Error: ${err.message}`;
+                
+                if (err.message.includes("model must be a Jev identifier") || err.message.includes("typesafe-ai/jev")) {
+                    renderModelMismatchBanner();
+                } else if (err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('network')) {
+                    renderCorsErrorBanner();
+                } else {
+                    alert(`API Error: ${err.message}`);
+                }
+            } finally {
+                runBtn.disabled = false;
+                runBtn.classList.remove('opacity-70');
+                if (mockBtn) { mockBtn.disabled = false; mockBtn.classList.remove('opacity-70'); }
+            }
+        }
+
+        function renderModelMismatchBanner() {
+            const container = document.getElementById('results-container');
+            container.innerHTML = `
+                <div class="p-5 bg-indigo-950/40 border border-indigo-800/80 rounded-2xl space-y-4 text-xs animate-fade-in">
+                    <div class="flex items-center justify-between border-b border-indigo-900/60 pb-2">
+                        <div class="flex items-center space-x-2 text-indigo-300 font-bold text-sm">
+                            <span class="text-base">💡</span>
+                            <span>ทำไมจึงพบข้อผิดพลาดนี้กับ OpenThai-SystemOne?</span>
+                        </div>
+                        <span class="text-[10px] bg-indigo-900/60 text-indigo-200 font-mono px-2 py-0.5 rounded border border-indigo-700/60">HuggingFace Model</span>
+                    </div>
+
+                    <p class="text-slate-300 leading-relaxed text-[11px]">
+                        เซิร์ฟเวอร์ API ของ <code class="text-rose-400 font-mono">https://www.jevai.org</code> เป็นของผู้พัฒนา <b>TypeSafe AI</b> จึงรองรับเฉพาะโมเดลตระกูล Jev เช่น <code class="text-cyan-400 font-mono">typesafe/jev-1.13</code> (หรือ <code class="text-cyan-400 font-mono">typesafe-ai/jev</code>)<br><br>
+                        ขณะที่ <b>OpenThai-SystemOne</b> (<code class="text-indigo-300 font-mono">iapp/OpenThai-SystemOne</code>) เป็นโมเดล <b>Open-Weights</b> ที่พัฒนาโดย <b>iApp Technology</b> เผยแพร่บน 
+                        <a href="https://huggingface.co/iapp/OpenThai-SystemOne" target="_blank" rel="noopener" class="text-indigo-400 underline font-semibold">Hugging Face</a> สำหรับให้ผู้พัฒนานำไปรันแบบ On-Premise หรือ Self-hosted (ผ่าน vLLM/Ollama) ด้วยตนเอง
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <!-- Action 1: Run Mock -->
+                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 flex flex-col justify-between">
+                            <div>
+                                <div class="font-bold text-indigo-300 text-xs">ทางเลือกที่ 1: รันโหมดจำลอง (Simulated Engine)</div>
+                                <div class="text-[11px] text-slate-400 mt-1">ดูผลการประเมิน 3 Primitives ของ OpenThai-SystemOne บนเว็บได้ทันที</div>
+                            </div>
+                            <button onclick="runDecision(true)" class="mt-3 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold text-xs shadow transition">
+                                🧪 รันโหมดจำลองทันที ➔
+                            </button>
+                        </div>
+
+                        <!-- Action 2: Switch to Jev -->
+                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 flex flex-col justify-between">
+                            <div>
+                                <div class="font-bold text-rose-300 text-xs">ทางเลือกที่ 2: ใช้โมเดล typesafe/jev-1.13</div>
+                                <div class="text-[11px] text-slate-400 mt-1">สลับกลับไปใช้โมเดลของ TypeSafe เพื่อยิง Live API ไปยัง jevai.org</div>
+                            </div>
+                            <button onclick="switchToJevModel()" class="mt-3 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold text-xs shadow transition">
+                                🔄 สลับเป็น typesafe/jev-1.13 ➔
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function switchToJevModel() {
+            const modelSelect = document.getElementById('model-select');
+            if (modelSelect) {
+                modelSelect.value = "typesafe/jev-1.13";
+                onModelSelectChange("typesafe/jev-1.13");
+            }
+            runDecision(false);
+        }
+
+        function renderCorsErrorBanner() {
+            const container = document.getElementById('results-container');
+            container.innerHTML = `
+                <div class="p-5 bg-amber-950/30 border border-amber-800/60 rounded-2xl space-y-4 text-xs animate-fade-in">
+                    <div class="flex items-center justify-between border-b border-amber-900/40 pb-2">
+                        <div class="flex items-center space-x-2 text-amber-300 font-bold text-sm">
+                            <span class="text-base">⚠️</span>
+                            <span>ติดข้อจำกัด Browser CORS (Failed to fetch)</span>
+                        </div>
+                        <span class="text-[10px] bg-amber-900/50 text-amber-300 font-mono px-2 py-0.5 rounded border border-amber-700/50">GitHub Pages</span>
+                    </div>
+
+                    <p class="text-slate-300 leading-relaxed text-[11px]">
+                        เนื่องจาก <b>GitHub Pages</b> เป็น Static Hosting ทำงานบนฝั่งไคลเอนต์ (Browser) โดยตรง ขณะที่เซิร์ฟเวอร์ <code class="text-rose-400 font-mono">https://www.jevai.org</code> ได้รับการออกแบบสำหรับ <b>Server-to-Server</b> และยังไม่ได้เปิด Header <code class="text-amber-400 font-mono">Access-Control-Allow-Origin</code> เบราว์เซอร์จึงบล็อกคำขอ JavaScript ตามมาตรฐานความปลอดภัย (SOP)
+                    </p>
+
+                    <!-- Instant Action 1: Switch to Mock Mode -->
+                    <div class="p-3 bg-indigo-950/50 border border-indigo-800/60 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-indigo-300 text-xs flex items-center gap-1.5">
+                                <span>🧪</span>
+                                <span>ทดสอบบนเว็บทันทีด้วยโหมดจำลอง (Mock Demo)</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">จำลองโครงสร้าง Choice, Score, Noul และผลลัพธ์เสมือนจริง 100% โดยไม่ต้องใช้ API</div>
+                        </div>
+                        <button onclick="runDecision(true)" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold text-xs shadow transition whitespace-nowrap self-start sm:self-auto">
+                            รันโหมด Mock ทันที ➔
+                        </button>
+                    </div>
+
+                    <!-- Action 2: If want live API -->
+                    <div class="space-y-2 pt-1">
+                        <div class="font-bold text-slate-300 text-xs">หากต้องการยิง API จริงของ Jev AI:</div>
+                        
+                        <div class="p-3 bg-slate-950 rounded-xl font-mono text-xs border border-slate-800 space-y-1.5">
+                            <div class="text-slate-500 text-[10px] font-sans font-semibold">วิธีที่ 1: รัน Local Proxy บนเครื่องของคุณเอง (แนะนำ)</div>
+                            <div class="text-emerald-400 font-bold select-all bg-slate-900 px-2 py-1 rounded">python3 lab-jev-decision/proxy.py</div>
+                            <div class="text-slate-400 text-[11px] font-sans">
+                                จากนั้นเปิดที่: <a href="http://localhost:8000/lab-jev-decision/index.html" class="text-cyan-400 underline font-semibold">http://localhost:8000/lab-jev-decision/index.html</a>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-slate-950 rounded-xl font-mono text-xs border border-slate-800 space-y-1.5">
+                            <div class="text-slate-500 text-[10px] font-sans font-semibold">วิธีที่ 2: ใช้ Cloudflare Worker เป็น Reverse Proxy (ฟรี)</div>
+                            <div class="text-slate-300 text-[11px] font-sans">
+                                นำโค้ด <code class="text-amber-400 font-mono">cloudflare-worker-proxy.js</code> ไป deploy บน Cloudflare Workers แล้วนำ URL มากรอกในช่อง <b>Custom Proxy Endpoint</b> ในปุ่ม <b>"ตั้งค่า API Key"</b>
+                            </div>
+                        </div>
+
+                        <div class="text-[11px] text-slate-500 font-sans flex items-center justify-between pt-1">
+                            <span>หรือทดสอบยิง API ตรงผ่าน Terminal:</span>
+                            <code class="text-amber-400 font-mono bg-slate-900 px-2 py-0.5 rounded">python3 lab-jev-decision/test_jev_api.py</code>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateMockResponse(questions, elapsedMs, model = "typesafe/jev-1.13") {
+            const answers = {};
+            const isThaiNative = model && model.includes("OpenThai");
+
+            questions.forEach(q => {
+                // Specialized Handling for Thai Consumer Protection Preset
+                if (q.id === 'complaint_category') {
+                    if (isThaiNative) {
+                        answers[q.id] = {
+                            choice: 'fraud_scam',
+                            probabilities: { fraud_scam: 0.991, late_delivery: 0.005, defective_product: 0.003, customer_inquiry: 0.001 },
+                            confidence: 0.991
+                        };
+                    } else {
+                        answers[q.id] = {
+                            choice: 'fraud_scam',
+                            probabilities: { fraud_scam: 0.784, late_delivery: 0.112, defective_product: 0.064, customer_inquiry: 0.040 },
+                            confidence: 0.784
+                        };
+                    }
+                } else if (q.id === 'urgency_score') {
+                    if (isThaiNative) {
+                        answers[q.id] = {
+                            score: 2.0,
+                            legend: 'ร้ายแรง เข้าข่ายฉ้อโกง/สูญเสียเงินจำนวนมาก',
+                            probabilities: [0.005, 0.030, 0.965],
+                            confidence: 0.965
+                        };
+                    } else {
+                        answers[q.id] = {
+                            score: 1.45,
+                            legend: 'ก้ำกึ่งระหว่างปานกลางถึงร้ายแรง',
+                            probabilities: [0.05, 0.45, 0.50],
+                            confidence: 0.760
+                        };
+                    }
+                } else if (q.id === 'escalate_legal') {
+                    answers[q.id] = {
+                        noul: isThaiNative ? 0.98 : 0.81
+                    };
+                // Specialized Handling for DevOps Incident & Terminal Guardrails
+                } else if (q.id === 'risk_level') {
+                    if (isThaiNative) {
+                        answers[q.id] = {
+                            choice: 'catastrophic_risk',
+                            probabilities: { catastrophic_risk: 0.914, operational_change: 0.076, safe_read: 0.010 },
+                            confidence: 0.914
+                        };
+                    } else {
+                        answers[q.id] = {
+                            choice: 'catastrophic_risk',
+                            probabilities: { catastrophic_risk: 0.998, operational_change: 0.0019, safe_read: 0.0001 },
+                            confidence: 0.998
+                        };
+                    }
+                } else if (q.id === 'blast_radius' || q.id === 'blast_radius_score') {
+                    answers[q.id] = {
+                        score: isThaiNative ? 2.62 : 2.96,
+                        legend: 'วิกฤตสูงสุด รัศมีความเสียหายทั้งระบบ',
+                        probabilities: isThaiNative ? [0.02, 0.09, 0.89] : [0.001, 0.005, 0.994],
+                        confidence: isThaiNative ? 0.890 : 0.994
+                    };
+                } else if (q.id === 'intercept_execution') {
+                    answers[q.id] = {
+                        noul: isThaiNative ? 0.935 : 0.999
+                    };
+                // Generic Fallback
+                } else if (q.type === 'choice') {
+                    const keys = Object.keys(q.criteria || {});
+                    const chosen = keys[0] || 'default';
+                    const probs = {};
+                    let rem = 1.0;
+                    const conf = isThaiNative ? 0.92 : 0.88;
+                    keys.forEach((k, i) => {
+                        if (i === 0) {
+                            probs[k] = conf;
+                            rem -= conf;
+                        } else {
+                            probs[k] = parseFloat((rem / (keys.length - 1)).toFixed(2));
+                        }
+                    });
+                    answers[q.id] = {
+                        choice: chosen,
+                        probabilities: probs,
+                        confidence: conf
+                    };
+                } else if (q.type === 'score') {
+                    const count = (q.criteria || []).length || 3;
+                    answers[q.id] = {
+                        score: parseFloat((count - 1.2).toFixed(2)),
+                        legend: q.criteria?.[count - 1] || 'ระดับสูง',
+                        probabilities: Array.from({length: count}, (_, i) => i === count - 1 ? 0.75 : 0.25 / (count - 1)),
+                        confidence: 0.75
+                    };
+                } else if (q.type === 'noul') {
+                    answers[q.id] = {
+                        noul: 0.94
+                    };
+                }
+            });
+
+            return {
+                result: { answers },
+                elapsedMs: elapsedMs || (isThaiNative ? 94 : 118),
+                model: model
+            };
+        }
+
+        function renderResults(data) {
+            const container = document.getElementById('results-container');
+            container.innerHTML = '';
+
+            if (data.simulatedNotice) {
+                const noticeBox = document.createElement('div');
+                noticeBox.className = "p-3 mb-3 bg-indigo-950/60 border border-indigo-800/80 rounded-xl text-indigo-200 text-xs flex items-center justify-between animate-fade-in";
+                noticeBox.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span>🇹🇭</span>
+                        <span>${data.simulatedNotice}</span>
+                    </div>
+                    <a href="https://huggingface.co/iapp/OpenThai-SystemOne" target="_blank" rel="noopener" class="text-[10px] text-indigo-300 underline font-mono shrink-0 ml-2">HF Repo ↗</a>
+                `;
+                container.appendChild(noticeBox);
+            }
+
+            // Check if there is an error code in the response
+            if (data.code !== undefined && data.code !== 0 && data.code !== 200) {
+                container.innerHTML = `
+                    <div class="p-4 bg-rose-950/40 border border-rose-800/60 rounded-xl space-y-2 text-xs animate-fade-in">
+                        <div class="flex items-center space-x-2 text-rose-400 font-bold">
+                            <span>❌ เซิร์ฟเวอร์ตอบกลับรหัสข้อผิดพลาด (Code: ${data.code})</span>
+                        </div>
+                        <p class="text-slate-300 font-mono">${data.message || 'ไม่มีข้อความอธิบาย'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Robust extraction of answers
+            let answers = null;
+            if (data.result?.answers) answers = data.result.answers;
+            else if (data.data?.result?.answers) answers = data.data.result.answers;
+            else if (data.data?.answers) answers = data.data.answers;
+            else if (data.answers) answers = data.answers;
+            else if (data.data && typeof data.data === 'object' && !Array.isArray(data.data)) answers = data.data;
+            else if (data.result && typeof data.result === 'object' && !Array.isArray(data.result)) answers = data.result;
+            else answers = {};
+
+            const entries = Object.entries(answers);
+            if (entries.length === 0) {
+                container.innerHTML = `
+                    <div class="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2 text-xs animate-fade-in">
+                        <div class="flex items-center justify-between text-amber-400 font-bold">
+                            <span>ℹ️ ได้รับผลลัพธ์จากเซิร์ฟเวอร์เรียบร้อย (HTTP 200 OK)</span>
+                            <span class="text-[10px] text-slate-500 font-mono">Status 200</span>
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            โครงสร้างข้อมูลที่ส่งกลับมาไม่ได้อยู่ในฟิลด์ answers ทั่วไป กรุณาดูข้อมูล JSON เต็มด้านล่างนี้:
+                        </p>
+                        <pre class="p-3 bg-slate-950 rounded-lg text-emerald-400 font-mono text-[11px] overflow-x-auto border border-slate-800">${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+                return;
+            }
+
+            entries.forEach(([qId, ans]) => {
+                const card = document.createElement('div');
+                card.className = "p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3";
+
+                let bodyHtml = '';
+
+                // Case 1: Choice
+                if (ans && typeof ans === 'object' && ans.choice !== undefined) {
+                    const probBars = Object.entries(ans.probabilities || {}).map(([opt, p]) => `
+                        <div>
+                            <div class="flex justify-between text-[11px] font-mono mb-1">
+                                <span class="${opt === ans.choice ? 'text-rose-400 font-bold' : 'text-slate-400'}">${opt}</span>
+                                <span class="text-slate-400">${(p * 100).toFixed(1)}%</span>
+                            </div>
+                            <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                <div class="${opt === ans.choice ? 'bg-rose-500' : 'bg-slate-600'} h-1.5 rounded-full" style="width: ${p * 100}%"></div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    bodyHtml = `
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <span class="text-xs text-slate-400 font-mono">ID: <strong class="text-slate-200">${qId}</strong></span>
+                            <span class="text-xs px-2.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 font-bold font-mono border border-rose-500/30">
+                                🎯 Choice: ${ans.choice}
+                            </span>
+                        </div>
+                        <div class="space-y-2 mt-2">${probBars || '<span class="text-slate-500 text-[11px]">ไม่มีข้อมูล Probability Distribution</span>'}</div>
+                        <div class="text-[11px] text-slate-400 pt-1 flex justify-between font-mono">
+                            <span>Confidence:</span>
+                            <span class="text-emerald-400 font-bold">${ans.confidence !== undefined ? ((ans.confidence || 0) * 100).toFixed(1) + '%' : 'N/A'}</span>
+                        </div>
+                    `;
+
+                // Case 2: Score
+                } else if (ans && typeof ans === 'object' && ans.score !== undefined) {
+                    const scoreVal = ans.score;
+                    bodyHtml = `
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <span class="text-xs text-slate-400 font-mono">ID: <strong class="text-slate-200">${qId}</strong></span>
+                            <span class="text-xs px-2.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold font-mono border border-cyan-500/30">
+                                📊 Score: ${scoreVal}
+                            </span>
+                        </div>
+                        <div class="mt-2 text-xs text-slate-300 font-light">
+                            Legend: <span class="font-medium text-cyan-400">${ans.legend || 'ระดับค่าเฉลี่ย'}</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 pt-1 flex justify-between font-mono">
+                            <span>Confidence:</span>
+                            <span class="text-emerald-400 font-bold">${ans.confidence !== undefined ? ((ans.confidence || 0) * 100).toFixed(1) + '%' : 'N/A'}</span>
+                        </div>
+                    `;
+
+                // Case 3: Noul
+                } else if (ans && typeof ans === 'object' && ans.noul !== undefined) {
+                    const pct = (ans.noul * 100).toFixed(1);
+                    const isHigh = ans.noul >= 0.5;
+                    bodyHtml = `
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <span class="text-xs text-slate-400 font-mono">ID: <strong class="text-slate-200">${qId}</strong></span>
+                            <span class="text-xs px-2.5 py-0.5 rounded-md ${isHigh ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'} font-bold font-mono">
+                                ⚖️ Noul (Prob Yes): ${pct}%
+                            </span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden mt-3">
+                            <div class="${isHigh ? 'bg-emerald-500' : 'bg-slate-600'} h-2 rounded-full" style="width: ${pct}%"></div>
+                        </div>
+                        <div class="text-[11px] text-slate-400 pt-2 font-mono flex justify-between">
+                            <span>ความน่าจะเป็นใช่:</span>
+                            <span class="${isHigh ? 'text-emerald-400 font-bold' : 'text-slate-400'}">${pct}%</span>
+                        </div>
+                    `;
+
+                // Case 4: Generic / Primitive
+                } else {
+                    bodyHtml = `
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <span class="text-xs text-slate-400 font-mono">ID: <strong class="text-slate-200">${qId}</strong></span>
+                            <span class="text-xs px-2.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 font-bold font-mono border border-indigo-500/30">
+                                Result: ${typeof ans === 'object' ? JSON.stringify(ans) : ans}
+                            </span>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = bodyHtml;
+                container.appendChild(card);
+            });
+        }
+
+        function switchTab(tab) {
+            activeTab = tab;
+            const tabs = ['response', 'curl', 'dsl', 'architecture'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}-btn`);
+                if (btn) {
+                    btn.className = (activeTab === t) ?
+                        "px-2.5 py-1 rounded text-xs font-semibold bg-slate-800 text-rose-400 border border-slate-700" :
+                        "px-2.5 py-1 rounded text-xs font-semibold text-slate-400 hover:text-white transition";
+                }
+            });
+            updateInspector();
+        }
+
+        function updateInspector() {
+            const container = document.getElementById('inspector-content');
+            if (activeTab === 'response') {
+                container.innerText = lastResponseData ? JSON.stringify(lastResponseData, null, 2) : "// ยังไม่มีผลลัพธ์ดิบ";
+            } else if (activeTab === 'curl') {
+                const apiKey = document.getElementById('api-key-input')?.value.trim() || "YOUR_API_KEY";
+                const payloadStr = JSON.stringify(lastRequestPayload || { model: "typesafe/jev-1.13" }, null, 2);
+                container.innerText = `# 1. cURL Command:
+curl -X POST https://www.jevai.org/api/v1/decisions \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -d '${payloadStr}'
+
+# 2. Python Requests:
+import requests
+
+url = "https://www.jevai.org/api/v1/decisions"
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer ${apiKey}"
+}
+payload = ${payloadStr}
+
+resp = requests.post(url, headers=headers, json=payload)
+print(resp.json())`;
+            } else if (activeTab === 'dsl') {
+                const model = document.getElementById('model-select')?.value || "typesafe/jev-1.13";
+                const stateVal = document.getElementById('state-input')?.value || "";
+                
+                let askCode = "";
+                currentQuestions.forEach((q, idx) => {
+                    const isLast = idx === currentQuestions.length - 1;
+                    if (q.type === 'choice') {
+                        const critStr = JSON.stringify(q.criteria || {}, null, 4).replace(/\n/g, '\n      ');
+                        askCode += `    ${q.id}: choice("${q.instructions}", ${critStr}).require(0.75)${isLast ? '' : ',\n'}`;
+                    } else if (q.type === 'noul') {
+                        askCode += `    ${q.id}: noul("${q.instructions}").gate(0.85)${isLast ? '' : ',\n'}`;
+                    } else if (q.type === 'score') {
+                        const levStr = JSON.stringify(q.criteria || []);
+                        askCode += `    ${q.id}: score("${q.instructions}", ${levStr})${isLast ? '' : ',\n'}`;
+                    }
+                });
+
+                container.innerText = `// System 1 Decision DSL (TypeScript / JavaScript Host-Language DSL)
+import { decide, choice, noul, score } from "./system1_dsl";
+
+const triage = decide({
+  name: "custom.decision",
+  model: "${model}",
+  ask: {
+${askCode}
+  },
+  on: {
+    lowConfidence: "human_review"
+  }
+});
+
+// Single-Pass Forward Pass (< 100ms)
+const out = await triage(${JSON.stringify(stateVal)});
+
+// Pure Control Flow (Deterministic Policy)
+if (out.urgent) {
+  console.log("Action required!");
+}
+console.log("Result:", out);`;
+            } else if (activeTab === 'architecture') {
+                container.innerText = `[Architecture Insight: System 1 vs System 2 AI]
+
+1. System 1 (Intuitive & Fast):
+   - ตอบคำถามทันทีใน 70–200 ms โดยไม่มีการสร้างข้อความยืดยาว (No token wastage)
+   - รับประกัน Output เป็น Typed Schema (Choice, Score, Noul)
+   - มีการปรับเทียบ Probability Distribution อย่างแม่นยำ
+
+2. System 2 (Deliberative & Slow):
+   - เช่น GPT-4o หรือ Claude 3.5 Sonnet ที่คิดเป็นขั้นเป็นตอน (CoT)
+   - มี Latency สูง (1.5 - 15 วินาที) และใช้ค่าใช้จ่ายต่อ Token สูง
+
+3. Best Practice ในระบบ Agent:
+   - ใช้ Jev (System 1) คัดกรอง Intent, ตรวจสอบความปลอดภัย Tool-Calling, และตัดทอน Context
+   - ส่งเฉพาะภารกิจที่ต้องใช้เหตุผลซับซ้อนให้ LLM หลัก (System 2)`;
+            }
+        }
+
+        function copyCode() {
+            const text = document.getElementById('inspector-content').innerText;
+            navigator.clipboard.writeText(text);
+            alert("คัดลอกลงคลิปบอร์ดแล้ว!");
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jev-decision-engine"
+version = "1.0.0"
+description = "Ultra-fast System 1 AI structured decision engine & DSL for AI agents, supporting Jev AI and OpenThai-SystemOne."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Anusorn Chaikaew" }]
+keywords = ["system1", "ai-decision", "agent-guardrails", "jev", "openthai", "type-safe-dsl"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+requires-python = ">=3.8"
+
+[project.scripts]
+jev-eval = "scripts.evaluate:run_evaluation"
+
+[tool.setuptools.packages.find]
+where = ["dsl/python"]
