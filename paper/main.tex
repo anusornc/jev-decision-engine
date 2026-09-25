@@ -1,6 +1,13 @@
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
-\usepackage[utf8]{inputenc}
+\usepackage{iftex}
+\ifXeTeX
+  \usepackage{fontspec}
+  \newfontfamily\thaifont{Noto Sans Thai}
+\else
+  \usepackage[utf8]{inputenc}
+  \newcommand{\thaifont}{}
+\fi
 \usepackage[margin=0.75in]{geometry}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{booktabs}
@@ -176,13 +183,13 @@ During our evaluation window (late September 2026), testing against the global \
 \subsection{Cross-Lingual Domain Resilience}
 To assess cross-lingual capabilities, we tested both engines against localized, high-stakes consumer fraud reports:
 \begin{quote}
-\textit{``โดนโกงครับ โอนเงินซื้อการ์ดจอไป 15,000 บาทแล้วร้านค้าบล็อกหนี ติดต่อไม่ได้เลย''} (Translation: ``I was scammed. Transferred 15,000 THB for a GPU, and the seller blocked me and disappeared.'')
+\textit{``{\thaifont โดนโกงครับ โอนเงินซื้อการ์ดจอไป} 15,000 {\thaifont บาทแล้วร้านค้าบล็อกหนี ติดต่อไม่ได้เลย}''} (Translation: ``I was scammed. Transferred 15,000 THB for a GPU, and the seller blocked me and disappeared.'')
 \end{quote}
 We simultaneously posed three questions: complaint category ($\mathcal{C}$), damage severity ($\mathcal{S}$), and legal escalation ($\mathcal{N}$).
 
-\begin{figure}[h]
+\begin{figure}[t]
 \centering
-\begin{lstlisting}[language=json]
+\begin{lstlisting}
 {
   "complaint_type": {
     "choice": "fraud_scam",
@@ -204,7 +211,7 @@ We simultaneously posed three questions: complaint category ($\mathcal{C}$), dam
 \label{fig:live_response}
 \end{figure}
 
-As shown in Figure~\ref{fig:live_response}, \textit{OpenThai-SystemOne} correctly classified the incident as \texttt{fraud\_scam} with $98.90\%$ probability ($\gamma = 0.9382$) and assigned an urgency rating of $1.77 / 2.0$ ($83.1\%$ severe). Conversely, global models trained purely on formal English translations frequently misclassify informal Thai terms (such as ``บล็อกหนี'' or ``บัญชีม้า'') into benign delivery delays, underscoring the necessity of culturally grounded System~1 models.
+As shown in Figure~\ref{fig:live_response}, \textit{OpenThai-SystemOne} correctly classified the incident as \texttt{fraud\_scam} with $98.90\%$ probability ($\gamma = 0.9382$) and assigned an urgency rating of $1.77 / 2.0$ ($83.1\%$ severe). Conversely, global models trained purely on formal English translations frequently misclassify informal Thai terms (such as ``{\thaifont บล็อกหนี}'' or ``{\thaifont บัญชีม้า}'') into benign delivery delays, underscoring the necessity of culturally grounded System~1 models.
 
 \section{Discussion: Failure Modes and Safety}
 System~1 models are optimized for rapid, bounded categorization, but exhibit distinct failure modes that practitioners must account for:
