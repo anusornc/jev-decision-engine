@@ -1,0 +1,51 @@
+{
+  "usecase_id": "usecase_4_context_pruning",
+  "title": "Use Case 4: Long-Session Context Pruning (บีบอัดประวัติการสนทนาของ Agent)",
+  "scenario": "Agent เขียนโค้ดรันคำสั่งทดสอบแล้วได้ Traceback ขนาดยาว 500 บรรทัด ต้องการตัดสินใจว่าจะเก็บประวัตินี้อย่างไรในรอบถัดไป",
+  "state": "Tool Output History Block: 'Traceback (most recent call last): File app.py line 45 in <module> ... ZeroDivisionError: division by zero (ซ้ำ 20 บรรทัด) -> แก้ไขเรียบร้อยในรอบถัดไป'",
+  "questions": {
+    "pruning_action": {
+      "type": "choice",
+      "instructions": "เลือกแนวทางการจัดการบล็อกข้อความนี้ใน Context รอบถัดไปของ Agent",
+      "criteria": {
+        "drop_entirely": "ทิ้งทั้งหมด เป็นข้อผิดพลาดชั่วคราวที่แก้เสร็จแล้ว ไม่มีประโยชน์ในอนาคต",
+        "summarize": "เก็บเฉพาะข้อความสรุปสั้นๆ 1 บรรทัด",
+        "keep_verbatim": "ต้องเก็บทุกตัวอักษรเพื่อใช้อ้างอิงแบบละเอียด"
+      }
+    },
+    "has_critical_reference_value": {
+      "type": "noul",
+      "instructions": "บล็อกข้อความนี้มีค่าต่อการอ้างอิงในคำสั่งถัดไปของ Agent หรือไม่"
+    }
+  },
+  "live_response": {
+    "model": "iapp/OpenThai-SystemOne",
+    "answers": {
+      "pruning_action": {
+        "type": "choice",
+        "choice": "drop_entirely",
+        "probabilities": {
+          "drop_entirely": 0.8499717712402344,
+          "summarize": 0.03241225704550743,
+          "keep_verbatim": 0.11761602759361267
+        },
+        "confidence": 0.54392409712051,
+        "abstain": 0.5508521795272827
+      },
+      "has_critical_reference_value": {
+        "type": "noul",
+        "noul": 0.15476924180984497
+      }
+    },
+    "usage": {
+      "input_tokens": 222,
+      "output_tokens": 0,
+      "permutations": 1
+    },
+    "measured_latency_ms": 258.5
+  },
+  "efficiency_analysis": {
+    "without_system1": "ประวัติขยายตัวจนเต็ม Context 128k ทำให้ Agent ช้าลงเรื่อยๆ และเสียค่าใช้จ่ายทวีคูณ",
+    "with_system1": "System 1 ตัดสินใจ Drop หรือ Summarize ข้อมูลขยะได้ฉับพลัน ทำให้ Agent ทำงานได้ไม่สิ้นสุดโดย Context ไม่บวม"
+  }
+}

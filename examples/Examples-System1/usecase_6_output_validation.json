@@ -1,0 +1,75 @@
+{
+  "usecase_id": "usecase_6_output_validation",
+  "title": "Use Case 6: Post-Generation Output Validation (ตรวจเช็ค Hallucination และความพร้อมก่อนส่งมอบ)",
+  "scenario": "LLM สร้างโค้ดฟังก์ชันคำนวณภาษีเสร็จแล้ว กำลังจะส่งมอบให้ผู้ใช้งาน",
+  "state": "LLM Generated Output: 'def calculate_vat(amount): return amount * 0.07' พร้อมผลการรัน Test: 'Ran 3 tests in 0.002s, OK (All passed)'",
+  "questions": {
+    "readiness_status": {
+      "type": "choice",
+      "instructions": "ประเมินความพร้อมของผลงานก่อนส่งมอบให้ผู้ใช้งาน",
+      "criteria": {
+        "ready_to_deliver": "ผลงานสมบูรณ์ ผ่านการทดสอบครบถ้วน พร้อมส่งให้ผู้ใช้",
+        "needs_refinement": "โค้ดยังไม่ครอบคลุม edge case หรือยังไม่มี test",
+        "reject_broken": "โค้ดมีบั๊ก รันไม่ผ่าน หรือมีข้อผิดพลาดร้ายแรง"
+      }
+    },
+    "is_hallucination_free": {
+      "type": "noul",
+      "instructions": "ผลลัพธ์นี้ไม่มีการกุข้อเท็จจริงขึ้นมาเอง (Hallucination-free) และสอดคล้องกับ Requirement หรือไม่"
+    },
+    "confidence_score": {
+      "type": "score",
+      "instructions": "ระดับความเชื่อมั่นในผลงาน (0=ต่ำมาก, 1=ปานกลาง, 2=สูงมาก)",
+      "criteria": [
+        "0: ความเชื่อมั่นต่ำ ยังมีจุดบกพร่อง",
+        "1: ความเชื่อมั่นปานกลาง",
+        "2: ความเชื่อมั่นสูง ผ่านการพิสูจน์แล้ว"
+      ]
+    }
+  },
+  "live_response": {
+    "model": "iapp/OpenThai-SystemOne",
+    "answers": {
+      "readiness_status": {
+        "type": "choice",
+        "choice": "ready_to_deliver",
+        "probabilities": {
+          "ready_to_deliver": 0.9933253526687622,
+          "needs_refinement": 0.004519791342318058,
+          "reject_broken": 0.002154858550056815
+        },
+        "confidence": 0.9596883440145509,
+        "abstain": 0.0008219626033678651
+      },
+      "is_hallucination_free": {
+        "type": "noul",
+        "noul": 0.7051810026168823
+      },
+      "confidence_score": {
+        "type": "score",
+        "score": 1.9799782037734985,
+        "legend": {
+          "0": "0: ความเชื่อมั่นต่ำ ยังมีจุดบกพร่อง",
+          "1": "1: ความเชื่อมั่นปานกลาง",
+          "2": "2: ความเชื่อมั่นสูง ผ่านการพิสูจน์แล้ว"
+        },
+        "probabilities": {
+          "0": 0.00546883512288332,
+          "1": 0.009084122255444527,
+          "2": 0.9854470491409302
+        },
+        "confidence": 0.9220484501805363
+      }
+    },
+    "usage": {
+      "input_tokens": 322,
+      "output_tokens": 0,
+      "permutations": 1
+    },
+    "measured_latency_ms": 256.41
+  },
+  "efficiency_analysis": {
+    "without_system1": "ต้องสั่ง LLM ตัวเดิมให้ทำ Self-reflection ซ้ำอีกรอบ เสียเวลาเพิ่มอีก 3-5 วินาที",
+    "with_system1": "System 1 ทำการ Sanity Gate ตรวจสอบสถานะการทดสอบใน 200ms ถ้าผ่านก็ปลดล็อกส่งมอบทันที"
+  }
+}

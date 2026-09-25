@@ -1,0 +1,75 @@
+{
+  "usecase_id": "usecase_1_cost_tiered_routing",
+  "title": "Use Case 1: Cost-Tiered Model Routing (คัดกรองงานก่อนเรียก LLM)",
+  "scenario": "ลูกค้าพิมพ์คำถามเข้ามาในแชทบอทของระบบ e-Commerce: 'พัสดุหมายเลข TH10928372 ตอนนี้อยู่ที่ไหนแล้วครับ'",
+  "state": "ข้อความจากลูกค้า: 'พัสดุหมายเลข TH10928372 ตอนนี้อยู่ที่ไหนแล้วครับ รบกวนเช็คให้หน่อย'",
+  "questions": {
+    "routing_target": {
+      "type": "choice",
+      "instructions": "จำแนกเส้นทางการประมวลผลที่เหมาะสมที่สุดและประหยัดต้นทุน",
+      "criteria": {
+        "sql_api_lookup": "ถามสถานะพัสดุ ค้นหายอดเงิน หรือดึงข้อมูลตรงจากฐานข้อมูล (ไม่ต้องใช้ LLM)",
+        "cheap_llm": "คำถามทั่วไป ทักทาย หรือสรุปข้อมูลสั้นๆ (ใช้ Flash/Haiku)",
+        "frontier_llm": "ข้อพิพาทซับซ้อน ร้องเรียนปัญหา หรือต้องการการวิเคราะห์เชิงลึก (ใช้ Pro/Opus)"
+      }
+    },
+    "requires_llm_reasoning": {
+      "type": "noul",
+      "instructions": "คำขอนี้จำเป็นต้องใช้โมเดลสร้างข้อความ (LLM Reasoning) หรือไม่"
+    },
+    "task_complexity": {
+      "type": "score",
+      "instructions": "ประเมินความซับซ้อนของคำขอ (0=ค้นหาฐานข้อมูลตรง, 1=สนทนาทั่วไป, 2=ข้อพิพาทซับซ้อน)",
+      "criteria": [
+        "ระดับ 0: ดึงข้อมูลฐานข้อมูลตรงๆ (Zero LLM tokens)",
+        "ระดับ 1: สนทนาพื้นฐาน (Lightweight LLM)",
+        "ระดับ 2: วิเคราะห์เชิงลึกและแก้ไขปัญหา (Frontier LLM)"
+      ]
+    }
+  },
+  "live_response": {
+    "model": "iapp/OpenThai-SystemOne",
+    "answers": {
+      "routing_target": {
+        "type": "choice",
+        "choice": "sql_api_lookup",
+        "probabilities": {
+          "sql_api_lookup": 0.9934840798377991,
+          "cheap_llm": 0.0037842486053705215,
+          "frontier_llm": 0.0027316927444189787
+        },
+        "confidence": 0.9602008997051823,
+        "abstain": 0.0008467957959510386
+      },
+      "requires_llm_reasoning": {
+        "type": "noul",
+        "noul": 0.16200149059295654
+      },
+      "task_complexity": {
+        "type": "score",
+        "score": 0.46163511276245117,
+        "legend": {
+          "0": "ระดับ 0: ดึงข้อมูลฐานข้อมูลตรงๆ (Zero LLM tokens)",
+          "1": "ระดับ 1: สนทนาพื้นฐาน (Lightweight LLM)",
+          "2": "ระดับ 2: วิเคราะห์เชิงลึกและแก้ไขปัญหา (Frontier LLM)"
+        },
+        "probabilities": {
+          "0": 0.5732780694961548,
+          "1": 0.39180880784988403,
+          "2": 0.03491314500570297
+        },
+        "confidence": 0.26888651549888487
+      }
+    },
+    "usage": {
+      "input_tokens": 374,
+      "output_tokens": 0,
+      "permutations": 1
+    },
+    "measured_latency_ms": 675.64
+  },
+  "efficiency_analysis": {
+    "without_system1": "ส่งเข้า GPT-4o หรือ Claude 3.5 Sonnet ทุกข้อความ (ต้นทุน ~$0.015, Latency ~2,500ms)",
+    "with_system1": "System 1 ตรวจพบว่าเป็นคำถาม tracking number -> ยิง SQL API ตรงโดยไม่เสียโทเค็น LLM เลย (ประหยัดงบ 100% สำหรับรอบนี้, Latency <250ms)"
+  }
+}

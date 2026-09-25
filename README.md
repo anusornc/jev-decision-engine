@@ -212,6 +212,11 @@ jev-decision-engine/
 │   │   └── system1_dsl.py
 │   └── js/                  # JavaScript Host-Language DSL
 │       └── system1_dsl.js
+├── examples/
+│   └── Examples-System1/    # Real-world System 1 LLM optimization benchmarks (6 use cases)
+│       ├── README.md
+│       ├── run_experiments.py
+│       └── *.json
 ├── playground/              # Web Lab & Local Proxy
 │   ├── index.html
 │   └── proxy.py
@@ -219,6 +224,23 @@ jev-decision-engine/
     ├── test_dsl.py
     └── test_dsl.js
 ```
+
+---
+
+## 📊 Real-World Optimization Benchmarks (`Examples-System1`)
+
+We tested 6 practical architectures where System 1 models optimize LLM agent workflows (cost, latency, safety, context). All benchmarks were executed against live `iapp/OpenThai-SystemOne`:
+
+👉 **[Explore Full Experiments & JSON Payloads](./examples/Examples-System1/README.md)**
+
+| Use Case | Architectural Role | System 1 Decision | Latency | Benefit |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Cost-Tiered Routing** | Bypass LLM for structured questions | `sql_api_lookup` (99.3%) | 675 ms (cold) | 100% token savings vs GPT-4/Opus |
+| **2. Pre-Execution Guardrail** | Intercept destructive bash commands | `deny` (98.4%) | 263 ms | Halts `rm -rf` before runtime damage |
+| **3. RAG Relevance Filter** | Filter low-relevance vector chunks | `irrelevant` (64.9%) | 312 ms | Saves 1,200 prompt tokens / query |
+| **4. Context Pruning** | Compress conversational history | `drop_entirely` (54.4%) | 258 ms | Cuts 60% memory bloat |
+| **5. Thai Fraud Triage** | Urgent scam classification | `online_shopping_fraud` (99.4%) | 267 ms | Immediate account freeze (`urgent: 1.99/2`) |
+| **6. Output Validation** | Hallucination / policy check | `ready_to_deliver` (96.0%) | 256 ms | Delivers in <300ms without 2nd LLM call |
 
 ---
 

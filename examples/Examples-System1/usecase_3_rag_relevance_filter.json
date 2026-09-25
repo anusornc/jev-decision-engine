@@ -1,0 +1,75 @@
+{
+  "usecase_id": "usecase_3_rag_relevance_filter",
+  "title": "Use Case 3: RAG Retrieval Relevance Filter (คัดกรองเอกสารก่อนส่งเข้า Context LLM)",
+  "scenario": "ระบบค้นหาเอกสาร RAG ดึง Chunk ข้อมูลมา 10 ชิ้น แต่ต้องการคัดทิ้งชิ้นที่ไม่เกี่ยวข้องเพื่อประหยัด Context Window",
+  "state": "User Question: 'วิธีขอใบกำกับภาษีย้อนหลังเกิน 30 วัน'\nRetrieved Document Chunk: 'เงื่อนไขการคืนสินค้า: ลูกค้าสามารถแจ้งคืนสินค้าได้ภายใน 7 วันทำการนับจากวันที่ได้รับสินค้า โดยต้องมีใบเสร็จแนบมาด้วย'",
+  "questions": {
+    "chunk_relevance": {
+      "type": "choice",
+      "instructions": "ประเมินความเกี่ยวข้องของเอกสารที่ดึงมากับคำถามของผู้ใช้",
+      "criteria": {
+        "highly_relevant": "ตอบคำถามได้ตรงจุด มีเนื้อหาใบกำกับภาษีย้อนหลัง",
+        "partially_relevant": "เกี่ยวข้องทางอ้อม เช่น เรื่องเอกสารการเงินทั่วไป",
+        "irrelevant": "ไม่เกี่ยวข้อง เป็นเรื่องการคืนสินค้าหรือนโยบายอื่น ควรตัดทิ้ง"
+      }
+    },
+    "include_in_prompt": {
+      "type": "noul",
+      "instructions": "ควรนำ Chunk นี้ใส่เข้าไปใน Context Prompt ของ LLM หรือไม่"
+    },
+    "information_gain": {
+      "type": "score",
+      "instructions": "ประเมินประโยชน์ของข้อมูลต่อการตอบคำถาม (0=ไร้ประโยชน์, 1=เสริมเล็กน้อย, 2=เป็นคำตอบหลัก)",
+      "criteria": [
+        "0: ไม่มีประโยชน์ ไม่ตรงประเด็น",
+        "1: มีประโยชน์บางส่วน",
+        "2: มีคำตอบที่ตรงประเด็นสำคัญ"
+      ]
+    }
+  },
+  "live_response": {
+    "model": "iapp/OpenThai-SystemOne",
+    "answers": {
+      "chunk_relevance": {
+        "type": "choice",
+        "choice": "irrelevant",
+        "probabilities": {
+          "highly_relevant": 0.0732717365026474,
+          "partially_relevant": 0.02745899185538292,
+          "irrelevant": 0.8992692828178406
+        },
+        "confidence": 0.6489241597811793,
+        "abstain": 0.00026006437838077545
+      },
+      "include_in_prompt": {
+        "type": "noul",
+        "noul": 0.062200210988521576
+      },
+      "information_gain": {
+        "type": "score",
+        "score": 0.30241796374320984,
+        "legend": {
+          "0": "0: ไม่มีประโยชน์ ไม่ตรงประเด็น",
+          "1": "1: มีประโยชน์บางส่วน",
+          "2": "2: มีคำตอบที่ตรงประเด็นสำคัญ"
+        },
+        "probabilities": {
+          "0": 0.8143551349639893,
+          "1": 0.06887183338403702,
+          "2": 0.11677306890487671
+        },
+        "confidence": 0.4517857656184452
+      }
+    },
+    "usage": {
+      "input_tokens": 353,
+      "output_tokens": 0,
+      "permutations": 1
+    },
+    "measured_latency_ms": 312.09
+  },
+  "efficiency_analysis": {
+    "without_system1": "อัดทุก Chunk เข้า Prompt 16,000 โทเค็น ทำให้ LLM เกิดอาการ Lost-in-the-Middle และเสียค่าใช้จ่ายสูง",
+    "with_system1": "System 1 คัดกรองเหลือเฉพาะ Chunk ที่ได้คะแนนสูง ทำให้ Context กระชับ ประหยัดโทเค็นได้ถึง 60-80%"
+  }
+}
